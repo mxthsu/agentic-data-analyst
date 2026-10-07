@@ -29,10 +29,15 @@ def synthesize_answer(state: AgentState, model: BaseChatModel) -> dict:
             HumanMessage(content=json.dumps(payload, ensure_ascii=False, default=str)),
         ],
     )
+    assumptions = tuple(
+        dict.fromkeys(
+            [*state.get("assumptions", []), *draft.assumptions]
+        )
+    )
     answer = AnswerPayload(
         status="ok",
         answer=draft.answer,
-        assumptions=draft.assumptions,
+        assumptions=assumptions,
     )
     trace = list(state.get("trace", []))
     trace.append(
