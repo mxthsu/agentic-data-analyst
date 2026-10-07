@@ -98,35 +98,19 @@ $envContent = [System.IO.File]::ReadAllText($envPath)
 $keyMatch = [regex]::Match($envContent, '(?m)^GOOGLE_API_KEY=(.*)$')
 $currentKey = if ($keyMatch.Success) { $keyMatch.Groups[1].Value.Trim() } else { "" }
 
-if ([string]::IsNullOrWhiteSpace($currentKey) -or $currentKey -eq "sua_chave") {
+if ([string]::IsNullOrWhiteSpace($currentKey) -or $currentKey -eq "sua_chave" -or $currentKey.Length -lt 20) {
     Write-Step "Configurando a chave do Gemini"
-    $secureKey = Read-Host "Cole a GOOGLE_API_KEY" -AsSecureString
-    $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureKey)
+    Write-Host "O arquivo .env será aberto no Bloco de Notas."
+    Write-Host "Cole a chave após GOOGLE_API_KEY=, salve o arquivo e feche o Bloco de Notas."
 
-    try {
-        $plainKey = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
-        if ([string]::IsNullOrWhiteSpace($plainKey)) {
-            throw "A GOOGLE_API_KEY não pode ficar vazia."
-        }
+    Start-Process -FilePath "notepad.exe" -ArgumentList $envPath -Wait
 
-        if ($keyMatch.Success) {
-            $replacement = "GOOGLE_API_KEY=$plainKey"
-            $envContent = [regex]::Replace(
-                $envContent,
-                '(?m)^GOOGLE_API_KEY=.*$',
-                [System.Text.RegularExpressions.MatchEvaluator]{ param($match) $replacement }
-            )
-        }
-        else {
-            $envContent = $envContent.TrimEnd() + [Environment]::NewLine + "GOOGLE_API_KEY=$plainKey" + [Environment]::NewLine
-        }
+    $envContent = [System.IO.File]::ReadAllText($envPath)
+    $keyMatch = [regex]::Match($envContent, '(?m)^GOOGLE_API_KEY=(.*)$')
+    $currentKey = if ($keyMatch.Success) { $keyMatch.Groups[1].Value.Trim() } else { "" }
 
-        Write-Utf8NoBom -Path $envPath -Content $envContent
-    }
-    finally {
-        if ($pointer -ne [IntPtr]::Zero) {
-            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
-        }
+    if ([string]::IsNullOrWhiteSpace($currentKey) -or $currentKey.Length -lt 20) {
+        throw "A GOOGLE_API_KEY não foi preenchida corretamente no arquivo .env."
     }
 }
 else {
