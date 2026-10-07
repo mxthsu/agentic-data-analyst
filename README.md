@@ -46,16 +46,104 @@ SQLite somente leitura
 
 O modelo de linguagem lida com interpretação, planejamento, geração, reparo, avaliação de evidência e síntese. Segurança, limites, execução SQL, política temporal e escolha da visualização permanecem determinísticos.
 
-## Executar localmente
+### Tecnologias
 
-Requisitos: Python 3.12 e o arquivo SQLite fornecido com o desafio.
+- **Python 3.12**
+- **LangGraph**
+- **LangChain Core + langchain-google-genai**
+- **Gemini Developer API (Google AI Studio)**
+- **FastAPI + Uvicorn**
+- **SQLite + sqlglot**
+- **Pydantic + pydantic-settings**
+- **Streamlit + pandas + httpx**
+- **pytest + Ruff + GitHub Actions**
 
-```bash
-python -m venv .venv
-pip install -e ".[dev]"
+As versões e demais dependências estão declaradas em `pyproject.toml`.
+
+### Fluxo do agente
+
+1. A aplicação lê o schema do SQLite e identifica tabelas, colunas, relações, datas e alguns valores categóricos úteis.
+2. A pergunta é interpretada e convertida em uma intenção estruturada.
+3. O contexto temporal é resolvido. Quando existe mais de uma interpretação possível, a aplicação pede esclarecimento antes de consultar o banco.
+4. O agente cria um plano e gera a próxima consulta SQL.
+5. A consulta passa pela validação de segurança antes da execução.
+6. Se houver erro de SQL, o fluxo tenta corrigir a consulta e valida novamente.
+7. Depois de cada consulta, o agente avalia se já existe informação suficiente. Se faltar evidência, uma nova consulta pode ser gerada.
+8. Ao final, a resposta é produzida a partir dos resultados obtidos e a interface escolhe a visualização adequada.
+
+A interface mostra as consultas executadas e as etapas do fluxo no painel de rastreabilidade.
+
+## Início rápido em outro computador (Windows / PowerShell)
+
+### 1. Pré-requisitos
+
+Instale **Git** e **Python 3.12**. Tenha também o arquivo SQLite fornecido no desafio e uma chave da Gemini Developer API / Google AI Studio.
+
+### 2. Clone o repositório
+
+```powershell
+git clone https://github.com/mxthsu/agentic-data-analyst.git
+cd agentic-data-analyst
 ```
 
-Ative o ambiente virtual, copie `.env.example` para `.env` e preencha:
+### 3. Crie e ative o ambiente virtual
+
+```powershell
+py -3.12 -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -e .
+```
+
+### 4. Configure o ambiente
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+No arquivo `.env`, preencha `GOOGLE_API_KEY`. Os demais valores podem permanecer com os padrões do projeto. Se o banco estiver com outro nome ou em outro caminho, ajuste `DATABASE_PATH`.
+
+### 5. Coloque o banco no projeto
+
+Crie a pasta `data` se necessário e copie o arquivo fornecido para:
+
+```text
+data/anexo_desafio_1.db
+```
+
+O banco não é versionado no Git.
+
+### 6. Inicie a API
+
+No primeiro PowerShell, a partir da raiz do projeto:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m uvicorn data_analyst.api.main:app --app-dir src --reload
+```
+
+A API fica em `http://localhost:8000` e o Swagger em `http://localhost:8000/docs`.
+
+### 7. Inicie a interface
+
+Abra um segundo PowerShell na raiz do projeto:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m streamlit run ui/streamlit_app.py
+```
+
+Abra a URL exibida pelo Streamlit, normalmente `http://localhost:8501`.
+
+### Próximas execuções
+
+Depois da primeira instalação, basta abrir dois terminais, ativar `.venv` nos dois e executar novamente os comandos da API e do Streamlit. Não é necessário reinstalar as dependências.
+
+## Configuração
+
+O arquivo `.env.example` contém as configurações disponíveis:
 
 ```env
 DATABASE_PATH=data/anexo_desafio_1.db
@@ -68,34 +156,11 @@ GEMINI_MAX_OUTPUT_TOKENS=1024
 API_URL=http://localhost:8000
 ```
 
-Coloque o banco em `data/anexo_desafio_1.db`. Ele não é versionado.
+### Modelo, limites e tokens
 
-Inicie a API:
+O modelo padrão é o `gemini-3.5-flash-lite`, acessado pela Gemini Developer API do Google AI Studio. O projeto aplica limite local de chamadas e timeout configurável. Em caso de limite do provider, a API retorna um erro controlado.
 
-```bash
-python -m uvicorn data_analyst.api.main:app --app-dir src --reload
-```
-
-Em outro terminal, inicie a interface:
-
-```bash
-python -m streamlit run ui/streamlit_app.py
-```
-
-A documentação interativa da API fica disponível em `http://localhost:8000/docs`.
-
-### Google AI Studio e nível gratuito
-
-O provider padrão é a Gemini Developer API via Google AI Studio, usando
-`gemini-3.5-flash-lite`. O projeto limita localmente a frequência de chamadas
-e não faz retries automáticos agressivos. O valor padrão de
-`GEMINI_REQUESTS_PER_MINUTE=6` define uma taxa sustentada conservadora. Um burst curto e configurável
-(`GEMINI_MAX_BURST_REQUESTS=5`) permite que etapas sequenciais de uma mesma
-investigação usem crédito acumulado sem remover o limite sustentado. A resposta
-também expõe tokens de entrada, saída e total agregados em toda a investigação.
-
-Os limites oficiais variam por projeto e modelo. Em caso de `429`, a API
-retorna uma mensagem controlada em vez de repetir indefinidamente a chamada.
+A interface mostra o consumo de tokens da execução. O valor vem do `usage_metadata` retornado pelo modelo. O `get_usage_metadata_callback()`, do `langchain-core`, coleta esses dados e o serviço soma `input_tokens`, `output_tokens` e `total_tokens` de todas as chamadas LLM feitas para responder à pergunta.
 
 Antes do teste ponta a ponta, valide apenas a integração do modelo:
 
@@ -103,7 +168,9 @@ Antes do teste ponta a ponta, valide apenas a integração do modelo:
 python scripts/smoke_gemini.py
 ```
 
-Esse comando faz uma única chamada estruturada e não consulta o SQLite. O pequeno burst inicial evita impor espera artificial à primeira etapa, enquanto o limitador continua repondo créditos na taxa sustentada configurada.
+Esse comando faz uma única chamada ao modelo e não consulta o SQLite.
+
+O rastro da execução também registra duração por etapa, SQL executado, quantidade de linhas, número de consultas e reparos.
 
 ## Testes e avaliações
 
@@ -124,7 +191,7 @@ As cinco perguntas do enunciado possuem resultados de referência independentes 
 4. reclamações não resolvidas por canal;
 5. tendência de reclamações por canal no último ano disponível.
 
-Esses valores são usados apenas como oráculos de avaliação; não são respostas fixas da aplicação.
+Esses valores ficam apenas nos testes como referência. A aplicação não usa respostas fixas.
 
 ### Validação ponta a ponta
 
@@ -140,23 +207,20 @@ As cinco perguntas do enunciado também foram executadas manualmente com o provi
 
 O rastro da interface também expõe duração por etapa, consultas SQL, reparos e consumo agregado de tokens de entrada e saída.
 
-## Decisões de projeto
+## Documentação
 
 - [Especificação](docs/SPEC-001-agentic-data-analyst.md)
 - [Descoberta do banco real](docs/DESCOBERTA-BANCO.md)
 - [ADRs](docs/adr/)
 - [Arquitetura proposta para o Desafio 2](docs/ARQUITETURA-DESAFIO-2.md)
 
-O banco real diverge parcialmente do esquema descrito no enunciado. Essa diferença é uma das razões para a descoberta dinâmica do esquema.
-
-## Estado atual
-
-O fluxo principal, API, visualização e testes determinísticos estão implementados. Os cinco casos oficiais foram validados ponta a ponta com modelo real. Essa validação permanece manual e fora do CI para evitar dependência de credenciais, custo e variabilidade externa.
+O banco real diverge parcialmente do esquema descrito no enunciado. A aplicação descobre o schema em tempo de execução.
 
 ## Possíveis evoluções
 
-- observabilidade externa com LangSmith ou ferramenta equivalente;
-- fallback entre modelos/provedores;
-- seleção de relevância para esquemas muito maiores;
-- cache de metadados e consultas seguras;
-- persistência opcional de histórico e métricas de avaliação.
+- usar Vertex AI em uma implantação na GCP;
+- adicionar tracing externo em ambiente de produção;
+- ampliar o conjunto de avaliações automatizadas;
+- cachear metadados do schema em bancos maiores;
+- guardar histórico de sessões quando houver necessidade;
+- permitir fallback entre modelos ou providers.
