@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+import altair as alt
 import httpx
 import pandas as pd
 import streamlit as st
@@ -66,26 +67,51 @@ def _render_visualization(result: dict | None, visualization: dict | None) -> No
         return
 
     if kind == "bar" and x in frame.columns and y in frame.columns:
-        st.bar_chart(
-            frame,
-            x=x,
-            y=y,
-            color=series if series in frame.columns else None,
-            sort=False,
+        x_encoding = alt.X(
+            x,
+            sort=None,
+            axis=alt.Axis(labelAngle=0, labelLimit=180),
+            title=_metric_label(x),
         )
+        y_encoding = alt.Y(y, title=_metric_label(y))
+
+        chart = alt.Chart(frame).mark_bar().encode(
+            x=x_encoding,
+            y=y_encoding,
+            tooltip=[x, y],
+        )
+
+        if series in frame.columns:
+            chart = chart.encode(
+                color=alt.Color(series, title=_metric_label(series)),
+                tooltip=[x, series, y],
+            )
+
+        st.altair_chart(chart, use_container_width=True)
         return
 
     if kind == "line" and x in frame.columns and y in frame.columns:
+        x_encoding = alt.X(
+            x,
+            sort=None,
+            axis=alt.Axis(labelAngle=0, labelLimit=180),
+            title=_metric_label(x),
+        )
+        y_encoding = alt.Y(y, title=_metric_label(y))
+
+        chart = alt.Chart(frame).mark_line(point=True).encode(
+            x=x_encoding,
+            y=y_encoding,
+            tooltip=[x, y],
+        )
+
         if series in frame.columns:
-            chart = frame.pivot_table(
-                index=x,
-                columns=series,
-                values=y,
-                aggfunc="sum",
+            chart = chart.encode(
+                color=alt.Color(series, title=_metric_label(series)),
+                tooltip=[x, series, y],
             )
-            st.line_chart(chart)
-        else:
-            st.line_chart(frame.set_index(x)[[y]])
+
+        st.altair_chart(chart, use_container_width=True)
         return
 
     st.dataframe(frame, use_container_width=True, hide_index=True)

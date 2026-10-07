@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Assistente agentivo de dados para consultas de negócio em SQLite"
 requires-python = ">=3.12"
 dependencies = [
+  "altair>=5,<7",
   "fastapi>=0.115,<1",
   "httpx>=0.28,<1",
   "langchain-core>=1,<2",
