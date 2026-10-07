@@ -175,13 +175,12 @@ st.set_page_config(
 st.title("Agentic Data Analyst")
 st.caption("Faça uma pergunta de negócio sobre o banco de dados fornecido.")
 
-question = st.text_area(
-    "Pergunta",
-    placeholder="Ex.: Quais estados tiveram mais clientes que compraram via App em maio?",
-    height=100,
-)
+with st.container():
+    question = st.chat_input(
+        "Faça uma pergunta de negócio...",
+    )
 
-if st.button("Analisar", type="primary", disabled=not question.strip()):
+if question:
     try:
         with st.spinner("Investigando os dados..."):
             payload = _ask(question.strip())
