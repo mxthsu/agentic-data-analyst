@@ -62,7 +62,7 @@ DATABASE_PATH=data/anexo_desafio_1.db
 GOOGLE_API_KEY=sua_chave
 GEMINI_MODEL=gemini-3.5-flash-lite
 GEMINI_REQUESTS_PER_MINUTE=6
-GEMINI_MAX_BURST_REQUESTS=3
+GEMINI_MAX_BURST_REQUESTS=5
 GEMINI_REQUEST_TIMEOUT_SECONDS=30
 GEMINI_MAX_OUTPUT_TOKENS=1024
 API_URL=http://localhost:8000
@@ -90,7 +90,7 @@ O provider padrão é a Gemini Developer API via Google AI Studio, usando
 `gemini-3.5-flash-lite`. O projeto limita localmente a frequência de chamadas
 e não faz retries automáticos agressivos. O valor padrão de
 `GEMINI_REQUESTS_PER_MINUTE=6` é conservador. Um burst curto e configurável
-(`GEMINI_MAX_BURST_REQUESTS=3`) permite que etapas sequenciais de uma mesma
+(`GEMINI_MAX_BURST_REQUESTS=5`) permite que etapas sequenciais de uma mesma
 investigação usem crédito acumulado sem remover o limite sustentado. A resposta
 também expõe tokens de entrada, saída e total agregados em toda a investigação.
 

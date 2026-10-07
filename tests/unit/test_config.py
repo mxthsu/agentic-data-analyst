@@ -76,5 +76,5 @@ def test_cria_modelo_gemini_sem_realizar_chamada(monkeypatch) -> None:
     assert model.max_output_tokens == 1024
     assert isinstance(model.rate_limiter, InMemoryRateLimiter)
     assert model.rate_limiter.requests_per_second == pytest.approx(0.1)
-    assert model.rate_limiter.max_bucket_size == 3
-    assert model.rate_limiter.available_tokens == pytest.approx(3)
+    assert model.rate_limiter.max_bucket_size == 5
+    assert model.rate_limiter.available_tokens == pytest.approx(5)
