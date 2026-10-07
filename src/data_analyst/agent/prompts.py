@@ -19,6 +19,8 @@ Use apenas o esquema fornecido, o plano e as evidências já obtidas.
 Quando o esquema fornecer categorical_values, use exatamente a grafia e a
 capitalização desses valores em filtros de igualdade. Não invente variantes.
 Para períodos relativos, ancore a janela na maior data da fonte relevante.
+Em rankings Top-N agregados, ordene primeiro pela métrica e adicione um critério
+secundário estável pela dimensão exibida antes do LIMIT para desempatar resultados.
 Retorne SQL executável, sem markdown, sem múltiplas instruções e sem operações
 de escrita. Evite selecionar dados pessoais quando eles não forem necessários.
 """.strip()
@@ -28,7 +30,8 @@ REPAIR_SQL_PROMPT = """
 Você corrige uma consulta SQLite que falhou na validação ou execução.
 Preserve o objetivo da consulta, use apenas o esquema fornecido e devolva uma
 única consulta de leitura válida. Não altere a intenção de negócio para contornar
-o erro.
+o erro. Em rankings Top-N agregados, preserve um critério secundário estável de
+desempate antes do LIMIT.
 """.strip()
 
 

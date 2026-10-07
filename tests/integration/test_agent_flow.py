@@ -226,3 +226,61 @@ def test_ambiguidade_temporal_interrompe_fluxo_e_pede_esclarecimento(
         "resolve_temporal_context",
         "request_clarification",
     ]
+
+
+def test_ranking_top_n_com_empate_e_reparado_para_ordem_deterministica(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "dados.db"
+    _database(db_path)
+    intent, plan = _base_responses()
+    model = ScriptedModel(
+        intent,
+        plan,
+        SQLProposal(
+            sql="""
+                SELECT c.estado, COUNT(DISTINCT c.id) AS clientes
+                FROM clientes c
+                JOIN compras p ON p.cliente_id = c.id
+                WHERE p.canal = 'App'
+                GROUP BY c.estado
+                ORDER BY clientes DESC
+                LIMIT 1
+            """,
+            purpose="rankear estados por clientes distintos",
+        ),
+        SQLProposal(
+            sql="""
+                SELECT c.estado, COUNT(DISTINCT c.id) AS clientes
+                FROM clientes c
+                JOIN compras p ON p.cliente_id = c.id
+                WHERE p.canal = 'App'
+                GROUP BY c.estado
+                ORDER BY clientes DESC, c.estado ASC
+                LIMIT 1
+            """,
+            purpose="rankear estados por clientes distintos com desempate estável",
+        ),
+        EvidenceAssessment(
+            decision="sufficient",
+            summary="O ranking determinístico foi obtido.",
+        ),
+        AnswerDraft(answer="SC aparece primeiro no desempate alfabético."),
+    )
+
+    result = build_graph(db_path, model).invoke(
+        {"question": "Qual estado lidera em clientes que compraram via App?"}
+    )
+
+    assert result["final_answer"].status == "ok"
+    assert result["repair_count"] == 1
+    assert result["query_count"] == 1
+    assert result["evidence"][0].result.rows == (("SC", 1),)
+    validation_events = [
+        event for event in result["trace"] if event.node == "validate_sql"
+    ]
+    assert validation_events[0].status == "erro"
+    assert "critério secundário determinístico" in (
+        validation_events[0].detail or ""
+    )
+    assert validation_events[1].status == "ok"

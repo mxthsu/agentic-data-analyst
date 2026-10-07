@@ -48,6 +48,24 @@ class SQLGuard:
         if normalized.startswith(("ATTACH", "DETACH", "PRAGMA")):
             return SQLValidation(False, "Comando SQLite não permitido.")
 
+        limit = statement.args.get("limit")
+        group = statement.args.get("group")
+        order = statement.args.get("order")
+        if limit is not None and group is not None:
+            if order is None:
+                return SQLValidation(
+                    False,
+                    "Rankings agregados com LIMIT exigem ORDER BY determinístico.",
+                )
+            if len(order.expressions) < 2:
+                return SQLValidation(
+                    False,
+                    (
+                        "Rankings agregados com LIMIT exigem um critério secundário "
+                        "determinístico para desempates."
+                    ),
+                )
+
         return SQLValidation(True)
 
     def ensure_safe(self, sql: str) -> None:
