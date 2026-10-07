@@ -1,7 +1,7 @@
 # SPEC-001 — Agentic Data Analyst
 
-**Status:** Pronta
-**Data:** 2026-10-06
+**Status:** Validada
+**Data:** 2026-10-07
 **Escopo:** Desafio Técnico 1 — Engenheiro(a) de IA (Pleno)
 
 ## 1. Problema e objetivo
@@ -66,7 +66,7 @@ LangGraph controla estado e transições. LangChain fornece a abstração de mod
 - SQL atual;
 - tentativas e resultados;
 - erros e suposições;
-- rastro operacional;
+- rastro operacional e consumo agregado de tokens;
 - resposta e visualização finais.
 
 O estado não armazena raciocínio interno do modelo.
@@ -147,6 +147,7 @@ A execução usa defesa em profundidade:
 - até 500 linhas por consulta;
 - modelo padrão `gemini-3.5-flash-lite`;
 - até 6 chamadas ao Gemini por minuto, por processo, configurável conforme o limite ativo do projeto;
+- burst local controlado de até 5 chamadas acumuladas para evitar espera artificial entre etapas sequenciais;
 - timeout de 30 segundos por chamada ao modelo;
 - sem retries automáticos agressivos do SDK;
 - até 1.024 tokens de saída por chamada.
@@ -157,7 +158,7 @@ O modelo recebe apenas o esquema, a pergunta, as evidências necessárias e erro
 
 A resposta final pode usar um modelo de linguagem para transformar evidência tabular em linguagem executiva, mas não pode introduzir métricas ausentes nos resultados.
 
-Cada execução possui `trace_id`. O rastro registra nó, estado, duração, SQL, quantidade de linhas, suposições e categoria de erro quando aplicável.
+Cada execução possui `trace_id`. O rastro registra nó, estado, duração, SQL, quantidade de linhas, suposições e categoria de erro quando aplicável. A resposta também expõe tokens de entrada, saída e total agregados em toda a investigação.
 
 ## 7. Testes e avaliações
 
@@ -194,15 +195,12 @@ Perguntas mínimas de referência:
 
 Entregáveis finais: repositório público no GitHub, README em português com instruções de execução e arquitetura, exemplos testados, melhorias futuras e um documento curto com a arquitetura proposta para o Desafio 2.
 
-## 9. Fora do escopo e decisões abertas
+## 9. Fora do escopo e decisões finais
 
 Ficam fora do escopo: autenticação, múltiplos locatários, memória persistente, banco vetorial, RAG, filas, Redis e infraestrutura distribuída.
 
-Decisões ainda abertas para a implementação:
-
-1. uso de atalho determinístico em `assess_evidence` para resultados simples, caso os testes mostrem ganho real;
-2. observabilidade externa permanece opcional.
+A validação de desempenho confirmou a decisão de manter o fluxo agentivo completo também para perguntas simples. Não foi adotado fast path por heurística; a redução de latência foi feita na camada de rate limiting, preservando interpretação, planejamento, geração SQL, avaliação de evidência e síntese. Observabilidade externa permanece como evolução opcional.
 
 **Provider decidido:** Google AI Studio / Gemini API, com `gemini-3.5-flash-lite` como modelo padrão da validação gratuita. A integração permanece isolada em `model_provider.py` para permitir troca futura sem alterar o grafo.
 
-**Marco concluído:** SPEC promovida de rascunho para pronta após revisão e aceite explícito em 2026-10-06.
+**Marco concluído:** SPEC promovida de rascunho para pronta em 2026-10-06 e validada em 2026-10-07 após os cinco casos oficiais passarem na execução ponta a ponta com modelo real.

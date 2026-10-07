@@ -126,6 +126,20 @@ As cinco perguntas do enunciado possuem resultados de referência independentes 
 
 Esses valores são usados apenas como oráculos de avaliação; não são respostas fixas da aplicação.
 
+### Validação ponta a ponta
+
+As cinco perguntas do enunciado também foram executadas manualmente com o provider real. Os resultados observados foram compatíveis com os oráculos independentes:
+
+| Caso | Resultado validado | Visualização |
+| --- | --- | --- |
+| Top 5 estados via App em maio | São Paulo 6, Minas Gerais 3, Santa Catarina 3, Alagoas 2, Espírito Santo 2 | barras |
+| Interações com WhatsApp em 2024 | 17 clientes distintos | indicador |
+| Média de compras por cliente e categoria | Roupas 2,211; Viagens 2,162; Livros 1,976; Serviços 1,962; Eletrônicos 1,923; Alimentos 1,882 | barras |
+| Reclamações não resolvidas por canal | Telefone 19, Chat 18, E-mail 14 | barras |
+| Tendência de reclamações no último ano | janela mensal de 2024-08 a 2025-07; Chat 34, E-mail 27, Telefone 33 no período | linha |
+
+O rastro da interface também expõe duração por etapa, consultas SQL, reparos e consumo agregado de tokens de entrada e saída.
+
 ## Decisões de projeto
 
 - [Especificação](docs/SPEC-001-agentic-data-analyst.md)
@@ -137,7 +151,7 @@ O banco real diverge parcialmente do esquema descrito no enunciado. Essa diferen
 
 ## Estado atual
 
-O fluxo principal, API, visualização e testes determinísticos estão implementados. A execução ponta a ponta com um modelo real é uma validação manual e não faz parte do CI para evitar dependência de credenciais, custo e variabilidade externa.
+O fluxo principal, API, visualização e testes determinísticos estão implementados. Os cinco casos oficiais foram validados ponta a ponta com modelo real. Essa validação permanece manual e fora do CI para evitar dependência de credenciais, custo e variabilidade externa.
 
 ## Possíveis evoluções
 
