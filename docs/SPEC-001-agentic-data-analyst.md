@@ -49,7 +49,7 @@ LangGraph
 SQLite somente leitura
 ```
 
-**Tecnologias principais:** Python 3.12, LangGraph, LangChain, OpenRouter, FastAPI, SQLite, sqlglot, Streamlit, Pydantic e pytest.
+**Tecnologias principais:** Python 3.12, LangGraph, LangChain, Google AI Studio / Gemini API, FastAPI, SQLite, sqlglot, Streamlit, Pydantic e pytest.
 
 LangGraph controla estado e transições. LangChain fornece a abstração de modelo e a saída estruturada. Segurança, limites e execução SQL permanecem determinísticos.
 
@@ -144,7 +144,12 @@ A execução usa defesa em profundidade:
 - até 2 reparos de SQL;
 - até 12 passos no ciclo investigativo; pré e pós-processamentos determinísticos não consomem esse orçamento;
 - limite de 5 segundos por consulta;
-- até 500 linhas por consulta.
+- até 500 linhas por consulta;
+- modelo padrão `gemini-3.5-flash-lite`;
+- até 6 chamadas ao Gemini por minuto, por processo, configurável conforme o limite ativo do projeto;
+- timeout de 30 segundos por chamada ao modelo;
+- sem retries automáticos agressivos do SDK;
+- até 1.024 tokens de saída por chamada.
 
 ## 6. Fundamentação, privacidade e rastro de execução
 
@@ -195,8 +200,9 @@ Ficam fora do escopo: autenticação, múltiplos locatários, memória persisten
 
 Decisões ainda abertas para a implementação:
 
-1. modelo específico do OpenRouter usado na validação ponta a ponta;
-2. uso de atalho determinístico em `assess_evidence` para resultados simples, caso os testes mostrem ganho real;
-3. observabilidade externa permanece opcional.
+1. uso de atalho determinístico em `assess_evidence` para resultados simples, caso os testes mostrem ganho real;
+2. observabilidade externa permanece opcional.
+
+**Provider decidido:** Google AI Studio / Gemini API, com `gemini-3.5-flash-lite` como modelo padrão da validação gratuita. A integração permanece isolada em `model_provider.py` para permitir troca futura sem alterar o grafo.
 
 **Marco concluído:** SPEC promovida de rascunho para pronta após revisão e aceite explícito em 2026-10-06.

@@ -59,8 +59,11 @@ Ative o ambiente virtual, copie `.env.example` para `.env` e preencha:
 
 ```env
 DATABASE_PATH=data/anexo_desafio_1.db
-OPENROUTER_API_KEY=sua_chave
-OPENROUTER_MODEL=provedor/modelo
+GOOGLE_API_KEY=sua_chave
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_REQUESTS_PER_MINUTE=6
+GEMINI_REQUEST_TIMEOUT_SECONDS=30
+GEMINI_MAX_OUTPUT_TOKENS=1024
 API_URL=http://localhost:8000
 ```
 
@@ -69,16 +72,35 @@ Coloque o banco em `data/anexo_desafio_1.db`. Ele não é versionado.
 Inicie a API:
 
 ```bash
-uvicorn data_analyst.api.main:app --app-dir src --reload
+python -m uvicorn data_analyst.api.main:app --app-dir src --reload
 ```
 
 Em outro terminal, inicie a interface:
 
 ```bash
-streamlit run ui/streamlit_app.py
+python -m streamlit run ui/streamlit_app.py
 ```
 
 A documentação interativa da API fica disponível em `http://localhost:8000/docs`.
+
+### Google AI Studio e nível gratuito
+
+O provider padrão é a Gemini Developer API via Google AI Studio, usando
+`gemini-3.5-flash-lite`. O projeto limita localmente a frequência de chamadas
+e não faz retries automáticos agressivos. O valor padrão de
+`GEMINI_REQUESTS_PER_MINUTE=6` é conservador e pode ser reduzido para ficar
+abaixo do limite ativo mostrado no Google AI Studio.
+
+Os limites oficiais variam por projeto e modelo. Em caso de `429`, a API
+retorna uma mensagem controlada em vez de repetir indefinidamente a chamada.
+
+Antes do teste ponta a ponta, valide apenas a integração do modelo:
+
+```bash
+python scripts/smoke_gemini.py
+```
+
+Esse comando faz uma única chamada estruturada e não consulta o SQLite. Com o limite padrão de 6 RPM, a primeira chamada pode aguardar cerca de 10 segundos antes de ser enviada.
 
 ## Testes e avaliações
 
@@ -89,7 +111,7 @@ ruff check src tests ui
 
 Os testes cobrem descoberta dinâmica do esquema, SQL somente leitura, timeout, limite de linhas, recuperação de consulta inválida, múltiplas consultas, ambiguidade temporal, API e política de visualização.
 
-A validação com modelo real fica isolada em `tests/e2e`. Ela só é executada quando `RUN_E2E=1` estiver definido e houver banco e credenciais locais, evitando custo e variabilidade no CI.
+A validação com modelo real fica isolada em `tests/e2e`. Ela só é executada quando `RUN_E2E=1` estiver definido e houver banco e credenciais locais, evitando consumo da cota gratuita e variabilidade no CI.
 
 As cinco perguntas do enunciado possuem resultados de referência independentes em `tests/evals/test_reference_queries.py`, incluindo:
 
