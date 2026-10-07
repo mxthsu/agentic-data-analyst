@@ -53,11 +53,40 @@ class InvestigationPlan(Model):
     expected_evidence: tuple[str, ...] = ()
 
 
+class SQLProposal(Model):
+    sql: str
+    purpose: str
+
+
 class QueryResult(Model):
     columns: tuple[str, ...]
     rows: tuple[tuple[Any, ...], ...]
     truncated: bool = False
     duration_ms: float = 0
+
+
+class QueryEvidence(Model):
+    purpose: str
+    sql: str
+    result: QueryResult
+
+
+class EvidenceAssessment(Model):
+    decision: Literal["sufficient", "more_data", "clarify"]
+    summary: str
+    next_query_goal: str | None = None
+    clarification_question: str | None = None
+
+
+class AnswerDraft(Model):
+    answer: str
+    assumptions: tuple[str, ...] = ()
+
+
+class AnswerPayload(Model):
+    status: Literal["ok", "clarification", "error"]
+    answer: str
+    assumptions: tuple[str, ...] = ()
 
 
 class TraceEvent(Model):

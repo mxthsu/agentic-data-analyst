@@ -2,36 +2,14 @@ import sqlite3
 from pathlib import Path
 
 from data_analyst.agent.graph import build_graph
-from data_analyst.agent.models import InvestigationPlan, QuestionIntent
-
-
-class FakeRunnable:
-    def __init__(self, schema):
-        self.schema = schema
-
-    def invoke(self, _messages):
-        if self.schema is QuestionIntent:
-            return QuestionIntent(
-                objective="contar clientes por estado",
-                metric="clientes distintos",
-                dimensions=("estado",),
-                filters=("canal=App",),
-                temporal_expression="maio",
-            )
-        if self.schema is InvestigationPlan:
-            return InvestigationPlan(
-                steps=(
-                    "identificar o período de maio disponível",
-                    "agrupar clientes distintos por estado",
-                ),
-                expected_evidence=("ranking por estado",),
-            )
-        raise AssertionError("Schema estruturado inesperado")
-
-
-class FakeModel:
-    def with_structured_output(self, schema):
-        return FakeRunnable(schema)
+from data_analyst.agent.models import (
+    AnswerDraft,
+    EvidenceAssessment,
+    InvestigationPlan,
+    QuestionIntent,
+    SQLProposal,
+)
+from tests.fakes import ScriptedModel
 
 
 def _database(path: Path) -> None:
@@ -49,24 +27,67 @@ def _database(path: Path) -> None:
                 canal TEXT,
                 FOREIGN KEY (cliente_id) REFERENCES clientes(id)
             );
+            INSERT INTO clientes VALUES (1, 'SC'), (2, 'SP');
+            INSERT INTO compras VALUES
+                (1, 1, '2025-05-10', 'App'),
+                (2, 2, '2025-05-12', 'App');
             """
         )
 
 
-def test_grafo_descobre_interpreta_e_planeja(tmp_path: Path) -> None:
+def test_grafo_descobre_planeja_consulta_e_responde(tmp_path: Path) -> None:
     db_path = tmp_path / "dados.db"
     _database(db_path)
-    graph = build_graph(db_path, FakeModel())
-
-    result = graph.invoke(
-        {"question": "Quais estados tiveram mais clientes via App em maio?"}
+    model = ScriptedModel(
+        QuestionIntent(
+            objective="contar clientes por estado",
+            metric="clientes distintos",
+            dimensions=("estado",),
+            filters=("canal=App",),
+            temporal_expression="maio de 2025",
+        ),
+        InvestigationPlan(
+            steps=("agrupar clientes distintos por estado",),
+            expected_evidence=("ranking por estado",),
+        ),
+        SQLProposal(
+            sql="""
+                SELECT c.estado, COUNT(DISTINCT c.id) AS clientes
+                FROM clientes c
+                JOIN compras p ON p.cliente_id = c.id
+                WHERE p.canal = 'App'
+                  AND strftime('%Y-%m', p.data_compra) = '2025-05'
+                GROUP BY c.estado
+                ORDER BY clientes DESC, c.estado
+            """,
+            purpose="rankear clientes distintos por estado",
+        ),
+        EvidenceAssessment(
+            decision="sufficient",
+            summary="O ranking solicitado foi obtido.",
+        ),
+        AnswerDraft(
+            status="ok",
+            answer="SC e SP possuem 1 cliente cada no recorte.",
+        ),
     )
 
-    assert result["intent"].metric == "clientes distintos"
-    assert len(result["plan"].steps) == 2
-    assert result["graph_steps"] == 3
+    result = build_graph(db_path, model).invoke(
+        {"question": "Quais estados tiveram mais clientes via App em maio de 2025?"}
+    )
+
+    assert result["final_answer"].status == "ok"
+    assert result["query_count"] == 1
+    assert len(result["evidence"]) == 1
+    assert result["evidence"][0].result.rows == (("SC", 1), ("SP", 1))
+    assert result["graph_steps"] == 8
     assert [event.node for event in result["trace"]] == [
         "discover_schema",
         "interpret_question",
         "plan_investigation",
+        "generate_sql",
+        "validate_sql",
+        "execute_sql",
+        "assess_evidence",
+        "synthesize_answer",
     ]
