@@ -93,7 +93,12 @@ def _ask(question: str) -> dict:
     response = httpx.post(
         f"{API_URL}/ask",
         json={"question": question},
-        timeout=90,
+        timeout=httpx.Timeout(
+            connect=5,
+            read=150,
+            write=10,
+            pool=5,
+        ),
     )
     response.raise_for_status()
     return response.json()
@@ -120,6 +125,11 @@ if st.button("Analisar", type="primary", disabled=not question.strip()):
             payload = _ask(question.strip())
     except httpx.ConnectError:
         st.error("A API não está disponível. Inicie o backend antes de continuar.")
+    except httpx.TimeoutException:
+        st.error(
+            "A análise excedeu o tempo limite da interface. "
+            "Verifique o terminal da API e tente novamente."
+        )
     except httpx.HTTPStatusError as exc:
         try:
             detail = exc.response.json().get("detail")

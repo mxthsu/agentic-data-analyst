@@ -5,6 +5,12 @@ import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import ValidationError
 
+from data_analyst.agent.provider_errors import (
+    ModelAuthenticationError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+    ModelUnavailableError,
+)
 from data_analyst.api.schemas import AskRequest, AskResponse, HealthResponse
 from data_analyst.config import Settings
 from data_analyst.service import DataAnalystService
@@ -42,6 +48,36 @@ def create_app(service: DataAnalystService | None = None) -> FastAPI:
             return AskResponse.from_state(state)
         except HTTPException:
             raise
+        except ModelRateLimitError as exc:
+            logger.warning("Limite da API Gemini atingido: %s", exc)
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "Limite temporário da API Gemini atingido. "
+                    "Aguarde alguns instantes e tente novamente."
+                ),
+            ) from exc
+        except ModelTimeoutError as exc:
+            logger.warning("Timeout da API Gemini: %s", exc)
+            raise HTTPException(
+                status_code=504,
+                detail=(
+                    "A API Gemini demorou mais que o limite configurado. "
+                    "Tente novamente."
+                ),
+            ) from exc
+        except ModelAuthenticationError as exc:
+            logger.error("Falha de autenticação na API Gemini")
+            raise HTTPException(
+                status_code=503,
+                detail="A credencial da API Gemini não foi aceita.",
+            ) from exc
+        except ModelUnavailableError as exc:
+            logger.warning("API Gemini indisponível: %s", exc)
+            raise HTTPException(
+                status_code=503,
+                detail="A API Gemini está temporariamente indisponível.",
+            ) from exc
         except Exception as exc:
             logger.exception("Falha ao processar pergunta")
             raise HTTPException(

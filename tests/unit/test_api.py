@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from data_analyst.agent.models import (
@@ -6,6 +7,12 @@ from data_analyst.agent.models import (
     QueryResult,
     TraceEvent,
     VisualizationSpec,
+)
+from data_analyst.agent.provider_errors import (
+    ModelAuthenticationError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+    ModelUnavailableError,
 )
 from data_analyst.api.main import create_app
 
@@ -41,9 +48,12 @@ class FakeService:
         }
 
 
-class FailingService:
+class ErrorService:
+    def __init__(self, error: Exception):
+        self.error = error
+
     def ask(self, _question: str):
-        raise RuntimeError("falha interna")
+        raise self.error
 
 
 def test_health_nao_depende_de_modelo_configurado() -> None:
@@ -84,8 +94,49 @@ def test_ask_rejeita_pergunta_curta() -> None:
     assert response.status_code == 422
 
 
+@pytest.mark.parametrize(
+    ("error", "status_code", "detail"),
+    [
+        (
+            ModelRateLimitError("limite"),
+            429,
+            (
+                "Limite temporário da API Gemini atingido. "
+                "Aguarde alguns instantes e tente novamente."
+            ),
+        ),
+        (
+            ModelTimeoutError("timeout"),
+            504,
+            "A API Gemini demorou mais que o limite configurado. Tente novamente.",
+        ),
+        (
+            ModelAuthenticationError("auth"),
+            503,
+            "A credencial da API Gemini não foi aceita.",
+        ),
+        (
+            ModelUnavailableError("indisponível"),
+            503,
+            "A API Gemini está temporariamente indisponível.",
+        ),
+    ],
+)
+def test_ask_traduz_erros_controlados_do_provider(
+    error: Exception,
+    status_code: int,
+    detail: str,
+) -> None:
+    client = TestClient(create_app(ErrorService(error)))
+
+    response = client.post("/ask", json={"question": "Quantos clientes existem?"})
+
+    assert response.status_code == status_code
+    assert response.json() == {"detail": detail}
+
+
 def test_ask_nao_expoe_erro_interno() -> None:
-    client = TestClient(create_app(FailingService()))
+    client = TestClient(create_app(ErrorService(RuntimeError("falha interna"))))
 
     response = client.post("/ask", json={"question": "Quantos clientes existem?"})
 
