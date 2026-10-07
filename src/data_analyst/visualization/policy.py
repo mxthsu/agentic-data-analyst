@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from numbers import Number
 import unicodedata
+from numbers import Number
 
 from data_analyst.agent.models import QueryEvidence, VisualizationSpec
 
