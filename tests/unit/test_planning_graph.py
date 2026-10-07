@@ -2,6 +2,7 @@ import sqlite3
 from pathlib import Path
 
 from data_analyst.agent.graph import build_graph
+from data_analyst.agent.nodes.synthesis import synthesize_answer
 from data_analyst.agent.models import (
     AnswerDraft,
     EvidenceAssessment,
@@ -95,3 +96,33 @@ def test_grafo_descobre_planeja_consulta_e_responde(tmp_path: Path) -> None:
         "synthesize_answer",
         "select_visualization",
     ]
+
+
+def test_sintese_preserva_suposicoes_deterministicas_e_remove_duplicatas() -> None:
+    deterministic_assumption = "O período foi ancorado na maior data disponível."
+    model = ScriptedModel(
+        AnswerDraft(
+            answer="Resposta baseada nas evidências.",
+            assumptions=(deterministic_assumption, "Suposição complementar do modelo."),
+        )
+    )
+
+    result = synthesize_answer(
+        {
+            "question": "Qual a tendência no último ano?",
+            "intent": QuestionIntent(
+                objective="analisar tendência",
+                temporal_expression="último ano",
+            ),
+            "evidence": [],
+            "assumptions": [deterministic_assumption],
+            "trace": [],
+            "graph_steps": 0,
+        },
+        model,
+    )
+
+    assert result["final_answer"].assumptions == (
+        deterministic_assumption,
+        "Suposição complementar do modelo.",
+    )
