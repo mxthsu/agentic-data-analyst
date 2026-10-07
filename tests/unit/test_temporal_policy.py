@@ -49,3 +49,5 @@ def test_periodo_relativo_e_ancorado_nos_dados() -> None:
     assert len(result["assumptions"]) == 1
     assert "maior data disponível" in result["assumptions"][0]
     assert result["clarification_question"] is None
+    assert "12 meses-calendário" in result["intent"].temporal_expression
+    assert "primeiro dia do mês 11 meses antes" in result["intent"].temporal_expression

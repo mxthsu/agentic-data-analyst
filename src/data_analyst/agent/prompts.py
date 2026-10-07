@@ -19,6 +19,11 @@ Use apenas o esquema fornecido, o plano e as evidências já obtidas.
 Quando o esquema fornecer categorical_values, use exatamente a grafia e a
 capitalização desses valores em filtros de igualdade. Não invente variantes.
 Para períodos relativos, ancore a janela na maior data da fonte relevante.
+Quando a pergunta pedir tendência no "último ano" ou "últimos 12 meses" com
+agregação mensal, use exatamente 12 meses-calendário: o início é o primeiro dia
+do mês 11 meses antes do mês da maior data disponível e o fim é a própria maior
+data disponível. Não use simplesmente "-1 year", pois isso pode gerar 13 meses
+calendário quando o período começa no meio de um mês.
 Em rankings Top-N agregados, ordene primeiro pela métrica e adicione um critério
 secundário estável pela dimensão exibida antes do LIMIT para desempatar resultados.
 Retorne SQL executável, sem markdown, sem múltiplas instruções e sem operações

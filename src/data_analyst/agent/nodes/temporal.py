@@ -73,6 +73,16 @@ def resolve_temporal_context(state: AgentState) -> dict:
         if policy not in assumptions:
             assumptions.append(policy)
 
+        updates["intent"] = intent.model_copy(
+            update={
+                "temporal_expression": (
+                    "últimos 12 meses-calendário ancorados na maior data disponível "
+                    "da fonte relevante; início no primeiro dia do mês 11 meses antes "
+                    "e fim na maior data disponível"
+                )
+            }
+        )
+
     month = _month_in_question(question)
     has_explicit_year = bool(re.search(r"\b(?:19|20)\d{2}\b", question))
     if month is None or has_explicit_year:
