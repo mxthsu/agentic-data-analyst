@@ -70,6 +70,7 @@ def _render_visualization(result: dict | None, visualization: dict | None) -> No
             frame,
             x=x,
             y=y,
+            color=series if series in frame.columns else None,
             sort=False,
         )
         return

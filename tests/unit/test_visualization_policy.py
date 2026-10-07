@@ -62,3 +62,37 @@ def test_respeita_pedido_explicito_de_tabela() -> None:
     )
 
     assert spec.kind == "table"
+
+
+def test_respeita_pedido_explicito_de_barras_em_resultado_temporal() -> None:
+    spec = choose_visualization(
+        "Mostre a tendência de reclamações em um gráfico de barras.",
+        _evidence(
+            ("mes", "canal", "total"),
+            (
+                ("2025-01", "Chat", 4),
+                ("2025-01", "Telefone", 2),
+                ("2025-02", "Chat", 6),
+            ),
+        ),
+    )
+
+    assert spec.kind == "bar"
+    assert spec.x == "mes"
+    assert spec.y == "total"
+    assert spec.series == "canal"
+
+
+def test_respeita_pedido_explicito_de_linha_em_comparacao_categorica() -> None:
+    spec = choose_visualization(
+        "Mostre os clientes por estado em um gráfico de linha.",
+        _evidence(
+            ("estado", "clientes"),
+            (("SC", 3), ("SP", 5)),
+        ),
+    )
+
+    assert spec.kind == "line"
+    assert spec.x == "estado"
+    assert spec.y == "clientes"
+    assert spec.series is None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from numbers import Number
+import unicodedata
 
 from data_analyst.agent.models import QueryEvidence, VisualizationSpec
 
@@ -20,6 +21,44 @@ def _temporal_column(columns: tuple[str, ...]) -> str | None:
     return None
 
 
+def _normalize(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value.lower())
+    return "".join(char for char in normalized if not unicodedata.combining(char))
+
+
+def _requested_visualization(question: str) -> str | None:
+    normalized = _normalize(question)
+
+    if "tabela" in normalized:
+        return "table"
+
+    if any(
+        term in normalized
+        for term in ("grafico de barras", "grafico de barra", "bar chart", "em barras")
+    ):
+        return "bar"
+
+    if any(
+        term in normalized
+        for term in ("grafico de linha", "line chart")
+    ):
+        return "line"
+
+    return None
+
+
+def _series_column(
+    columns: tuple[str, ...],
+    *,
+    x: str,
+    y: str,
+) -> str | None:
+    return next(
+        (column for column in columns if column not in (x, y)),
+        None,
+    )
+
+
 def choose_visualization(
     question: str,
     evidence: list[QueryEvidence],
@@ -35,7 +74,8 @@ def choose_visualization(
     if not rows or not columns:
         return VisualizationSpec(kind="table")
 
-    if "tabela" in question_lower:
+    requested = _requested_visualization(question)
+    if requested == "table":
         return VisualizationSpec(kind="table")
 
     if len(rows) == 1 and len(columns) == 1 and _is_numeric_column(latest, 0):
@@ -46,19 +86,35 @@ def choose_visualization(
     ]
     temporal = _temporal_column(columns)
 
+    if requested in ("bar", "line") and len(rows) > 1 and numeric_indices:
+        y_index = numeric_indices[-1]
+        y = columns[y_index]
+        if temporal is not None:
+            x = temporal
+        else:
+            x = next(
+                (column for index, column in enumerate(columns) if index != y_index),
+                None,
+            )
+
+        if x is not None:
+            return VisualizationSpec(
+                kind=requested,
+                x=x,
+                y=y,
+                series=_series_column(columns, x=x, y=y),
+            )
+
     line_requested = any(
         term in question_lower
         for term in ("tendência", "tendencia", "evolução", "evolucao", "linha")
     )
     if temporal and numeric_indices and (line_requested or len(rows) > 1):
         y_index = numeric_indices[-1]
-        series = next(
-            (
-                column
-                for index, column in enumerate(columns)
-                if column != temporal and index != y_index
-            ),
-            None,
+        series = _series_column(
+            columns,
+            x=temporal,
+            y=columns[y_index],
         )
         return VisualizationSpec(
             kind="line",
