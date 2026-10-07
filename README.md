@@ -4,7 +4,7 @@ Implementação do Desafio Técnico 1 para Engenheiro(a) de IA (Pleno): um assis
 
 ## O que a solução faz
 
-- descobre tabelas, colunas, chaves estrangeiras e cobertura temporal em tempo de execução;
+- descobre tabelas, colunas, chaves estrangeiras, cobertura temporal e valores categóricos de baixa cardinalidade em tempo de execução;
 - interpreta a pergunta e cria um plano de investigação;
 - gera SQL dinamicamente, sem consultas de negócio fixas na aplicação;
 - valida e executa SQL somente leitura;

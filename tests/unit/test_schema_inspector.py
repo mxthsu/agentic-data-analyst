@@ -54,6 +54,10 @@ def test_descobre_schema_real_coluna_extra_fk_e_datas(tmp_path: Path) -> None:
     assert coverage.max_date == "2025-05-10"
     assert coverage.years_by_month[5] == (2025,)
 
+    assert schema.categorical_values["clientes.segmento"] == ("B2B",)
+    assert "clientes.nome" not in schema.categorical_values
+    assert "compras.cliente_id" not in schema.categorical_values
+
 
 def test_descoberta_cita_identificadores_com_espaco(tmp_path: Path) -> None:
     db_path = tmp_path / "identificadores.db"

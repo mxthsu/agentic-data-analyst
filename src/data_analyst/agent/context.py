@@ -31,6 +31,9 @@ def schema_payload(schema: DatabaseSchema) -> dict[str, Any]:
         "date_coverage": {
             name: coverage.model_dump() for name, coverage in schema.date_coverage.items()
         },
+        "categorical_values": {
+            name: list(values) for name, values in schema.categorical_values.items()
+        },
     }
 
 

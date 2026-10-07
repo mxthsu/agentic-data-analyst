@@ -105,7 +105,7 @@ Os nomes acima são identificadores de implementação. A documentação e a int
 
 | Nó | Responsabilidade |
 | --- | --- |
-| `discover_schema` | Ler tabelas, colunas, chaves estrangeiras e cobertura temporal. |
+| `discover_schema` | Ler tabelas, colunas, chaves estrangeiras, cobertura temporal e domínios categóricos seguros. |
 | `interpret_question` | Estruturar objetivo, métrica, dimensões, filtros e ambiguidade. |
 | `resolve_temporal_context` | Inferir período quando houver uma única interpretação segura ou pedir esclarecimento. |
 | `plan_investigation` | Definir os passos necessários para responder. |

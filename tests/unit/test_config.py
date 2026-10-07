@@ -69,7 +69,6 @@ def test_cria_modelo_gemini_sem_realizar_chamada(monkeypatch) -> None:
 
     assert isinstance(model, ChatGoogleGenerativeAI)
     assert model.model == "gemini-3.5-flash-lite"
-    assert model.temperature == 0
     assert model.max_retries == 1
     assert model.timeout == 30
     assert model.max_output_tokens == 1024

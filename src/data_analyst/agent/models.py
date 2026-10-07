@@ -37,6 +37,7 @@ class TableSchema(Model):
 class DatabaseSchema(Model):
     tables: dict[str, TableSchema]
     date_coverage: dict[str, DateCoverage] = Field(default_factory=dict)
+    categorical_values: dict[str, tuple[str | int, ...]] = Field(default_factory=dict)
 
 
 class QuestionIntent(Model):

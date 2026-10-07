@@ -11,7 +11,6 @@ def create_chat_model(settings: Settings) -> BaseChatModel:
     return ChatGoogleGenerativeAI(
         model=settings.gemini_model,
         api_key=settings.google_api_key,
-        temperature=0,
         max_tokens=settings.gemini_max_output_tokens,
         request_timeout=settings.gemini_request_timeout_seconds,
         retries=1,

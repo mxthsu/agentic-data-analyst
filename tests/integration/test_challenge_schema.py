@@ -20,3 +20,10 @@ def test_schema_real_diverge_do_enunciado_sem_quebrar_descoberta() -> None:
     client_columns = {column.name for column in schema.tables["clientes"].columns}
     assert {"valor_total_gasto", "data_ultima_compra"} <= client_columns
     assert schema.date_coverage["compras.data_compra"].max_date == "2025-07-22"
+    assert "Reclamação" in schema.categorical_values["suporte.tipo_contato"]
+    assert set(schema.categorical_values["suporte.canal"]) == {
+        "Chat",
+        "E-mail",
+        "Telefone",
+    }
+    assert schema.categorical_values["suporte.resolvido"] == (0, 1)
