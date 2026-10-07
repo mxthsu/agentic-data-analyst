@@ -1,6 +1,6 @@
 # Agentic Data Analyst
 
-Implementação do Desafio Técnico 1 para Engenheiro(a) de IA (Pleno): um assistente que recebe perguntas de negócio em linguagem natural, investiga um banco SQLite e devolve uma resposta fundamentada nos dados.
+Assistente agentivo de dados que recebe perguntas de negócio em linguagem natural, investiga um banco SQLite e produz respostas fundamentadas, com geração e validação de SQL, visualizações e rastreabilidade da execução.
 
 ## O que a solução faz
 
@@ -89,7 +89,7 @@ A documentação interativa da API fica disponível em `http://localhost:8000/do
 O provider padrão é a Gemini Developer API via Google AI Studio, usando
 `gemini-3.5-flash-lite`. O projeto limita localmente a frequência de chamadas
 e não faz retries automáticos agressivos. O valor padrão de
-`GEMINI_REQUESTS_PER_MINUTE=6` é conservador. Um burst curto e configurável
+`GEMINI_REQUESTS_PER_MINUTE=6` define uma taxa sustentada conservadora. Um burst curto e configurável
 (`GEMINI_MAX_BURST_REQUESTS=5`) permite que etapas sequenciais de uma mesma
 investigação usem crédito acumulado sem remover o limite sustentado. A resposta
 também expõe tokens de entrada, saída e total agregados em toda a investigação.

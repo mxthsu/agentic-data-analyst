@@ -124,7 +124,7 @@ Os nomes acima são identificadores de implementação. A documentação e a int
 - “clientes” significa clientes distintos quando a pergunta não indicar contagem de eventos;
 - mês sem ano usa o único ano disponível na fonte relevante e registra a suposição; se houver mais de um ano plausível, pede esclarecimento;
 - “último ano” usa os 12 meses-calendário até o mês da maior data disponível da fonte relevante;
-- rankings usam ordenação secundária determinística e sinalizam empates que afetem o corte solicitado.
+- rankings usam ordenação secundária determinística para tornar o corte reproduzível.
 
 ### Segurança de SQL
 
@@ -146,8 +146,8 @@ A execução usa defesa em profundidade:
 - limite de 5 segundos por consulta;
 - até 500 linhas por consulta;
 - modelo padrão `gemini-3.5-flash-lite`;
-- até 6 chamadas ao Gemini por minuto, por processo, configurável conforme o limite ativo do projeto;
-- burst local controlado de até 5 chamadas acumuladas para evitar espera artificial entre etapas sequenciais;
+- taxa sustentada local de 6 chamadas ao Gemini por minuto, por processo, configurável conforme o limite ativo do projeto;
+- burst local controlado de até 5 créditos acumulados para evitar espera artificial entre etapas sequenciais;
 - timeout de 30 segundos por chamada ao modelo;
 - sem retries automáticos agressivos do SDK;
 - até 1.024 tokens de saída por chamada.
