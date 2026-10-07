@@ -37,6 +37,7 @@ LangGraph
     |
     +-- descoberta do esquema
     +-- interpretação da pergunta
+    +-- contexto temporal determinístico
     +-- plano de investigação
     +-- geração / validação / execução SQL
     +-- avaliação de evidência
@@ -48,7 +49,7 @@ LangGraph
 SQLite somente leitura
 ```
 
-**Tecnologias principais:** Python 3.12, LangGraph, LangChain, FastAPI, SQLite, sqlglot, Streamlit, Pydantic e pytest.
+**Tecnologias principais:** Python 3.12, LangGraph, LangChain, OpenRouter, FastAPI, SQLite, sqlglot, Streamlit, Pydantic e pytest.
 
 LangGraph controla estado e transições. LangChain fornece a abstração de modelo e a saída estruturada. Segurança, limites e execução SQL permanecem determinísticos.
 
@@ -58,7 +59,7 @@ LangGraph controla estado e transições. LangChain fornece a abstração de mod
 
 `AgentState` mantém apenas informações necessárias à execução:
 
-- pergunta;
+- pergunta e identificador da execução;
 - esquema;
 - intenção estruturada;
 - plano de investigação;
@@ -76,6 +77,8 @@ O estado não armazena raciocínio interno do modelo.
 discover_schema
       ↓
 interpret_question
+      ↓
+resolve_temporal_context
       ↓
 plan_investigation
       ↓
@@ -104,14 +107,15 @@ Os nomes acima são identificadores de implementação. A documentação e a int
 | --- | --- |
 | `discover_schema` | Ler tabelas, colunas, chaves estrangeiras e cobertura temporal. |
 | `interpret_question` | Estruturar objetivo, métrica, dimensões, filtros e ambiguidade. |
+| `resolve_temporal_context` | Inferir período quando houver uma única interpretação segura ou pedir esclarecimento. |
 | `plan_investigation` | Definir os passos necessários para responder. |
 | `generate_sql` | Produzir a próxima consulta a partir do plano e das evidências. |
 | `validate_sql` | Aplicar a política determinística de SQL. |
 | `execute_sql` | Executar consulta válida no SQLite somente leitura. |
 | `assess_evidence` | Decidir se deve consultar novamente, responder ou encerrar. |
 | `repair_sql` | Corrigir uma consulta inválida usando SQL, erro e esquema. |
-| `synthesize` | Produzir a resposta executiva baseada nas evidências. |
-| `visualization` | Selecionar uma visualização compatível com o resultado. |
+| `synthesize_answer` | Produzir a resposta executiva baseada nas evidências. |
+| `select_visualization` | Selecionar uma visualização compatível com o resultado. |
 
 ## 5. Regras e limites
 
@@ -119,7 +123,7 @@ Os nomes acima são identificadores de implementação. A documentação e a int
 
 - “clientes” significa clientes distintos quando a pergunta não indicar contagem de eventos;
 - mês sem ano usa o único ano disponível na fonte relevante e registra a suposição; se houver mais de um ano plausível, pede esclarecimento;
-- “último ano” usa os 12 meses terminando na maior data disponível da fonte relevante;
+- “último ano” usa os 12 meses-calendário até o mês da maior data disponível da fonte relevante;
 - rankings usam ordenação secundária determinística e sinalizam empates que afetem o corte solicitado.
 
 ### Segurança de SQL
@@ -138,7 +142,7 @@ A execução usa defesa em profundidade:
 
 - até 4 consultas executadas por pergunta;
 - até 2 reparos de SQL;
-- até 12 passos do grafo;
+- até 12 passos no ciclo investigativo; pré e pós-processamentos determinísticos não consomem esse orçamento;
 - limite de 5 segundos por consulta;
 - até 500 linhas por consulta.
 
@@ -191,9 +195,8 @@ Ficam fora do escopo: autenticação, múltiplos locatários, memória persisten
 
 Decisões ainda abertas para a implementação:
 
-1. provedor e modelo usados na validação ponta a ponta;
-2. uso de atalho determinístico em `assess_evidence` para resultados simples;
-3. formato visual final do rastro no Streamlit;
-4. observabilidade externa permanece opcional.
+1. modelo específico do OpenRouter usado na validação ponta a ponta;
+2. uso de atalho determinístico em `assess_evidence` para resultados simples, caso os testes mostrem ganho real;
+3. observabilidade externa permanece opcional.
 
 **Marco concluído:** SPEC promovida de rascunho para pronta após revisão e aceite explícito em 2026-10-06.
