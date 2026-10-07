@@ -102,3 +102,4 @@ class VisualizationSpec(Model):
     kind: Literal["metric", "table", "bar", "line"] = "table"
     x: str | None = None
     y: str | None = None
+    series: str | None = None

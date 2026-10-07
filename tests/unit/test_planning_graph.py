@@ -67,7 +67,6 @@ def test_grafo_descobre_planeja_consulta_e_responde(tmp_path: Path) -> None:
             summary="O ranking solicitado foi obtido.",
         ),
         AnswerDraft(
-            status="ok",
             answer="SC e SP possuem 1 cliente cada no recorte.",
         ),
     )
@@ -81,6 +80,9 @@ def test_grafo_descobre_planeja_consulta_e_responde(tmp_path: Path) -> None:
     assert len(result["evidence"]) == 1
     assert result["evidence"][0].result.rows == (("SC", 1), ("SP", 1))
     assert result["graph_steps"] == 8
+    assert result["visualization"].kind == "bar"
+    assert result["visualization"].x == "estado"
+    assert result["visualization"].y == "clientes"
     assert [event.node for event in result["trace"]] == [
         "discover_schema",
         "interpret_question",
@@ -90,4 +92,5 @@ def test_grafo_descobre_planeja_consulta_e_responde(tmp_path: Path) -> None:
         "execute_sql",
         "assess_evidence",
         "synthesize_answer",
+        "select_visualization",
     ]

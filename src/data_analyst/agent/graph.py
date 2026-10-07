@@ -7,6 +7,7 @@ from langgraph.graph import END, START, StateGraph
 
 from data_analyst.agent.nodes.discovery import discover_schema
 from data_analyst.agent.nodes.planning import interpret_question, plan_investigation
+from data_analyst.agent.nodes.presentation import select_visualization
 from data_analyst.agent.nodes.query import (
     assess_evidence,
     execute_sql,
@@ -86,6 +87,7 @@ def build_graph(
     graph.add_node("assess_evidence", lambda state: assess_evidence(state, model))
     graph.add_node("repair_sql", lambda state: repair_sql(state, model))
     graph.add_node("synthesize_answer", lambda state: synthesize_answer(state, model))
+    graph.add_node("select_visualization", select_visualization)
     graph.add_node("request_clarification", request_clarification)
     graph.add_node("fail_gracefully", fail_gracefully)
 
@@ -123,7 +125,8 @@ def build_graph(
             "fail": "fail_gracefully",
         },
     )
-    graph.add_edge("synthesize_answer", END)
+    graph.add_edge("synthesize_answer", "select_visualization")
+    graph.add_edge("select_visualization", END)
     graph.add_edge("request_clarification", END)
     graph.add_edge("fail_gracefully", END)
 

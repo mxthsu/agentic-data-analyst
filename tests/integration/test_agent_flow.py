@@ -69,7 +69,7 @@ def test_sql_com_coluna_inexistente_e_reparado_e_reexecutado(tmp_path: Path) -> 
             decision="sufficient",
             summary="A contagem foi obtida após o reparo.",
         ),
-        AnswerDraft(status="ok", answer="Foram encontrados 3 clientes."),
+        AnswerDraft(answer="Foram encontrados 3 clientes."),
     )
 
     result = build_graph(db_path, model).invoke({"question": "Quantos clientes compraram?"})
@@ -104,7 +104,7 @@ def test_operacao_de_escrita_e_bloqueada_antes_da_execucao_e_reparada(
             decision="sufficient",
             summary="A contagem foi obtida com uma consulta segura.",
         ),
-        AnswerDraft(status="ok", answer="Há 3 compras."),
+        AnswerDraft(answer="Há 3 compras."),
     )
 
     result = build_graph(db_path, model).invoke({"question": "Quantas compras existem?"})
@@ -153,7 +153,6 @@ def test_agente_pode_fazer_mais_de_uma_consulta_antes_de_responder(
             summary="As duas evidências cobrem a pergunta.",
         ),
         AnswerDraft(
-            status="ok",
             answer="Há 3 compras; SC reúne 2 clientes e SP reúne 1.",
         ),
     )
