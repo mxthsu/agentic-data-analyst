@@ -23,7 +23,7 @@ pytestmark = [
     pytest.mark.e2e,
     pytest.mark.skipif(
         not RUN_E2E or SETTINGS is None or not SETTINGS.database_path.exists(),
-        reason="E2E real exige RUN_E2E=1, banco local e configuração do OpenRouter",
+        reason="E2E real exige RUN_E2E=1, banco local e configuração do Gemini",
     ),
 ]
 

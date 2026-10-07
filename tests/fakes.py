@@ -26,5 +26,5 @@ class ScriptedModel:
         for response in responses:
             self.responses[type(response)].append(response)
 
-    def with_structured_output(self, schema: type[BaseModel]):
+    def with_structured_output(self, schema: type[BaseModel], **_kwargs):
         return _ScriptedRunnable(self, schema)
