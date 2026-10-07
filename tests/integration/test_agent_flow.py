@@ -192,3 +192,37 @@ def test_reparos_sao_limitados_e_falha_e_controlada(tmp_path: Path) -> None:
     assert result.get("query_count", 0) == 0
     assert result["graph_steps"] <= 12
     assert [event.node for event in result["trace"]].count("repair_sql") == 2
+
+
+def test_ambiguidade_temporal_interrompe_fluxo_e_pede_esclarecimento(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "dados.db"
+    _database(db_path)
+    with sqlite3.connect(db_path) as db:
+        db.execute(
+            "INSERT INTO compras VALUES (?, ?, ?, ?)",
+            (4, 1, "2024-05-10", "App"),
+        )
+
+    model = ScriptedModel(
+        QuestionIntent(
+            objective="analisar compras via App",
+            metric="clientes distintos",
+            temporal_expression="maio",
+        )
+    )
+
+    result = build_graph(db_path, model).invoke(
+        {"question": "Quantos clientes compraram via App em maio?"}
+    )
+
+    assert result["final_answer"].status == "clarification"
+    assert "2024, 2025" in result["final_answer"].answer
+    assert result.get("query_count", 0) == 0
+    assert [event.node for event in result["trace"]] == [
+        "discover_schema",
+        "interpret_question",
+        "resolve_temporal_context",
+        "request_clarification",
+    ]

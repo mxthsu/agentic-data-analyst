@@ -52,11 +52,13 @@ def synthesize_answer(state: AgentState, model: BaseChatModel) -> dict:
 
 def request_clarification(state: AgentState) -> dict:
     assessment = state.get("assessment")
-    question = (
-        assessment.clarification_question
-        if assessment and assessment.clarification_question
-        else "Preciso de mais detalhes para responder com segurança."
-    )
+    question = state.get("clarification_question")
+    if not question:
+        question = (
+            assessment.clarification_question
+            if assessment and assessment.clarification_question
+            else "Preciso de mais detalhes para responder com segurança."
+        )
     trace = list(state.get("trace", []))
     trace.append(
         TraceEvent(

@@ -20,6 +20,7 @@ from data_analyst.agent.nodes.synthesis import (
     request_clarification,
     synthesize_answer,
 )
+from data_analyst.agent.nodes.temporal import resolve_temporal_context
 from data_analyst.agent.state import AgentState
 from data_analyst.safety.sql_guard import SQLGuard
 
@@ -30,6 +31,10 @@ MAX_GRAPH_STEPS = 12
 
 def _budget_exhausted(state: AgentState) -> bool:
     return state.get("graph_steps", 0) >= MAX_GRAPH_STEPS
+
+
+def _after_temporal_resolution(state: AgentState) -> str:
+    return "clarify" if state.get("clarification_question") else "plan"
 
 
 def _after_validation(state: AgentState) -> str:
@@ -80,6 +85,7 @@ def build_graph(
 
     graph.add_node("discover_schema", lambda state: discover_schema(state, db_path))
     graph.add_node("interpret_question", lambda state: interpret_question(state, model))
+    graph.add_node("resolve_temporal_context", resolve_temporal_context)
     graph.add_node("plan_investigation", lambda state: plan_investigation(state, model))
     graph.add_node("generate_sql", lambda state: generate_sql(state, model))
     graph.add_node("validate_sql", lambda state: validate_sql(state, active_guard))
@@ -93,7 +99,15 @@ def build_graph(
 
     graph.add_edge(START, "discover_schema")
     graph.add_edge("discover_schema", "interpret_question")
-    graph.add_edge("interpret_question", "plan_investigation")
+    graph.add_edge("interpret_question", "resolve_temporal_context")
+    graph.add_conditional_edges(
+        "resolve_temporal_context",
+        _after_temporal_resolution,
+        {
+            "plan": "plan_investigation",
+            "clarify": "request_clarification",
+        },
+    )
     graph.add_edge("plan_investigation", "generate_sql")
     graph.add_edge("generate_sql", "validate_sql")
     graph.add_conditional_edges(

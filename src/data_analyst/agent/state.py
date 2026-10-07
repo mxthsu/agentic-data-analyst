@@ -24,6 +24,7 @@ class AgentState(TypedDict, total=False):
     current_query_purpose: str | None
     last_error: str | None
     assessment: EvidenceAssessment | None
+    clarification_question: str | None
     query_count: int
     repair_count: int
     graph_steps: int

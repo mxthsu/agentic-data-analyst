@@ -86,6 +86,7 @@ def test_grafo_descobre_planeja_consulta_e_responde(tmp_path: Path) -> None:
     assert [event.node for event in result["trace"]] == [
         "discover_schema",
         "interpret_question",
+        "resolve_temporal_context",
         "plan_investigation",
         "generate_sql",
         "validate_sql",

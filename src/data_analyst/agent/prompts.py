@@ -16,6 +16,7 @@ Não invente tabelas ou colunas e não gere a resposta final.
 GENERATE_SQL_PROMPT = """
 Você gera uma única consulta SQLite de leitura para avançar uma investigação.
 Use apenas o esquema fornecido, o plano e as evidências já obtidas.
+Para períodos relativos, ancore a janela na maior data da fonte relevante.
 Retorne SQL executável, sem markdown, sem múltiplas instruções e sem operações
 de escrita. Evite selecionar dados pessoais quando eles não forem necessários.
 """.strip()
