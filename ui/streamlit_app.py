@@ -66,7 +66,12 @@ def _render_visualization(result: dict | None, visualization: dict | None) -> No
         return
 
     if kind == "bar" and x in frame.columns and y in frame.columns:
-        st.bar_chart(frame.set_index(x)[[y]])
+        st.bar_chart(
+            frame,
+            x=x,
+            y=y,
+            sort=False,
+        )
         return
 
     if kind == "line" and x in frame.columns and y in frame.columns:
