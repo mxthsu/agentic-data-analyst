@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     google_api_key: SecretStr
     gemini_model: NonEmptyStr = "gemini-3.5-flash-lite"
     gemini_requests_per_minute: int = Field(default=6, ge=1, le=60)
+    gemini_max_burst_requests: int = Field(default=3, ge=1, le=10)
     gemini_request_timeout_seconds: float = Field(default=30.0, ge=5, le=120)
     gemini_max_output_tokens: int = Field(default=1024, ge=128, le=4096)
 

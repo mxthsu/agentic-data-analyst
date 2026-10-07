@@ -67,6 +67,22 @@ def _render_visualization(result: dict | None, visualization: dict | None) -> No
     st.dataframe(frame, use_container_width=True, hide_index=True)
 
 
+def _render_token_usage(token_usage: dict | None) -> None:
+    usage = token_usage or {}
+    total_tokens = int(usage.get("total_tokens", 0) or 0)
+    if total_tokens <= 0:
+        return
+
+    input_tokens = int(usage.get("input_tokens", 0) or 0)
+    output_tokens = int(usage.get("output_tokens", 0) or 0)
+
+    st.caption("Uso do modelo")
+    input_col, output_col, total_col = st.columns(3)
+    input_col.metric("Tokens de entrada", f"{input_tokens:,}".replace(",", "."))
+    output_col.metric("Tokens de saída", f"{output_tokens:,}".replace(",", "."))
+    total_col.metric("Tokens totais", f"{total_tokens:,}".replace(",", "."))
+
+
 def _render_trace(trace: list[dict]) -> None:
     with st.expander("Como a resposta foi obtida"):
         for index, event in enumerate(trace, start=1):
@@ -150,6 +166,7 @@ if st.button("Analisar", type="primary", disabled=not question.strip()):
             payload.get("result"),
             payload.get("visualization"),
         )
+        _render_token_usage(payload.get("token_usage"))
         _render_trace(payload.get("trace", []))
 
         if payload.get("trace_id"):

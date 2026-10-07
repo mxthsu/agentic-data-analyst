@@ -5,6 +5,7 @@ from data_analyst.agent.models import (
     AnswerPayload,
     QueryEvidence,
     QueryResult,
+    TokenUsage,
     TraceEvent,
     VisualizationSpec,
 )
@@ -37,6 +38,11 @@ class FakeService:
                 )
             ],
             "visualization": VisualizationSpec(kind="metric", y="clientes"),
+            "token_usage": TokenUsage(
+                input_tokens=120,
+                output_tokens=30,
+                total_tokens=150,
+            ),
             "trace": [
                 TraceEvent(
                     node="execute_sql",
@@ -81,6 +87,11 @@ def test_ask_expoe_resposta_resultado_visualizacao_e_trace() -> None:
         "x": None,
         "y": "clientes",
         "series": None,
+    }
+    assert body["token_usage"] == {
+        "input_tokens": 120,
+        "output_tokens": 30,
+        "total_tokens": 150,
     }
     assert body["trace"][0]["node"] == "execute_sql"
     assert body["trace"][0]["sql"].startswith("SELECT COUNT")

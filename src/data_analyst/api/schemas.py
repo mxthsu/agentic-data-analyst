@@ -4,7 +4,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from data_analyst.agent.models import QueryResult, TraceEvent, VisualizationSpec
+from data_analyst.agent.models import (
+    QueryResult,
+    TokenUsage,
+    TraceEvent,
+    VisualizationSpec,
+)
 from data_analyst.agent.state import AgentState
 
 
@@ -19,6 +24,7 @@ class AskResponse(BaseModel):
     assumptions: tuple[str, ...] = ()
     result: QueryResult | None = None
     visualization: VisualizationSpec | None = None
+    token_usage: TokenUsage = Field(default_factory=TokenUsage)
     trace: tuple[TraceEvent, ...] = ()
 
     @classmethod
@@ -36,6 +42,7 @@ class AskResponse(BaseModel):
             assumptions=answer.assumptions,
             result=latest_result,
             visualization=state.get("visualization"),
+            token_usage=state.get("token_usage", TokenUsage()),
             trace=tuple(state.get("trace", [])),
         )
 

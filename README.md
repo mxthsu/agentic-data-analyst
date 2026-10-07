@@ -12,7 +12,7 @@ Implementação do Desafio Técnico 1 para Engenheiro(a) de IA (Pleno): um assis
 - pode executar mais de uma consulta antes de responder;
 - trata ambiguidades temporais de forma explícita;
 - escolhe indicador, tabela, barras ou linha de forma determinística;
-- expõe consultas, etapas, erros e duração no rastro operacional;
+- expõe consultas, etapas, erros, duração e consumo de tokens no rastro operacional;
 - disponibiliza uma API FastAPI e uma interface Streamlit.
 
 ## Arquitetura
@@ -62,6 +62,7 @@ DATABASE_PATH=data/anexo_desafio_1.db
 GOOGLE_API_KEY=sua_chave
 GEMINI_MODEL=gemini-3.5-flash-lite
 GEMINI_REQUESTS_PER_MINUTE=6
+GEMINI_MAX_BURST_REQUESTS=3
 GEMINI_REQUEST_TIMEOUT_SECONDS=30
 GEMINI_MAX_OUTPUT_TOKENS=1024
 API_URL=http://localhost:8000
@@ -88,8 +89,10 @@ A documentação interativa da API fica disponível em `http://localhost:8000/do
 O provider padrão é a Gemini Developer API via Google AI Studio, usando
 `gemini-3.5-flash-lite`. O projeto limita localmente a frequência de chamadas
 e não faz retries automáticos agressivos. O valor padrão de
-`GEMINI_REQUESTS_PER_MINUTE=6` é conservador e pode ser reduzido para ficar
-abaixo do limite ativo mostrado no Google AI Studio.
+`GEMINI_REQUESTS_PER_MINUTE=6` é conservador. Um burst curto e configurável
+(`GEMINI_MAX_BURST_REQUESTS=3`) permite que etapas sequenciais de uma mesma
+investigação usem crédito acumulado sem remover o limite sustentado. A resposta
+também expõe tokens de entrada, saída e total agregados em toda a investigação.
 
 Os limites oficiais variam por projeto e modelo. Em caso de `429`, a API
 retorna uma mensagem controlada em vez de repetir indefinidamente a chamada.
@@ -100,7 +103,7 @@ Antes do teste ponta a ponta, valide apenas a integração do modelo:
 python scripts/smoke_gemini.py
 ```
 
-Esse comando faz uma única chamada estruturada e não consulta o SQLite. Com o limite padrão de 6 RPM, a primeira chamada pode aguardar cerca de 10 segundos antes de ser enviada.
+Esse comando faz uma única chamada estruturada e não consulta o SQLite. O pequeno burst inicial evita impor espera artificial à primeira etapa, enquanto o limitador continua repondo créditos na taxa sustentada configurada.
 
 ## Testes e avaliações
 

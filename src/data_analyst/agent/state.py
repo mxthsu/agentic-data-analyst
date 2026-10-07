@@ -9,6 +9,7 @@ from .models import (
     InvestigationPlan,
     QueryEvidence,
     QuestionIntent,
+    TokenUsage,
     TraceEvent,
     VisualizationSpec,
 )
@@ -31,6 +32,7 @@ class AgentState(TypedDict, total=False):
     evidence: list[QueryEvidence]
     errors: list[str]
     assumptions: list[str]
+    token_usage: TokenUsage
     trace: list[TraceEvent]
     final_answer: AnswerPayload | None
     visualization: VisualizationSpec | None

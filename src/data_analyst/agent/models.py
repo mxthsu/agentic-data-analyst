@@ -90,6 +90,12 @@ class AnswerPayload(Model):
     assumptions: tuple[str, ...] = ()
 
 
+class TokenUsage(Model):
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+
 class TraceEvent(Model):
     node: str
     status: Literal["ok", "erro", "reparo", "esclarecimento"]
