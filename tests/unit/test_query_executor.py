@@ -58,7 +58,7 @@ def test_query_longa_respeita_timeout(tmp_path: Path) -> None:
       UNION ALL
       SELECT x + 1 FROM numeros WHERE x < 100000000
     )
-    SELECT SUM(x) FROM numeros
+    SELECT SUM(x) AS total FROM numeros
     """
 
     with pytest.raises(QueryExecutionError, match="tempo"):

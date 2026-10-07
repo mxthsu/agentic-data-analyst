@@ -11,6 +11,7 @@ API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
 NODE_LABELS = {
     "discover_schema": "Descoberta do banco",
     "interpret_question": "Interpretação da pergunta",
+    "resolve_temporal_context": "Contexto temporal",
     "plan_investigation": "Plano de investigação",
     "generate_sql": "Geração da consulta",
     "validate_sql": "Validação da consulta",
@@ -33,6 +34,23 @@ def _dataframe(result: dict | None) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def _metric_label(column: str) -> str:
+    normalized = column.strip().lower()
+    prefixes = (
+        ("total_", "Total de "),
+        ("media_", "Média de "),
+        ("quantidade_", "Quantidade de "),
+        ("qtd_", "Quantidade de "),
+        ("contagem_", "Contagem de "),
+    )
+    for prefix, label in prefixes:
+        if normalized.startswith(prefix):
+            remainder = normalized[len(prefix):].replace("_", " ")
+            return f"{label}{remainder}"
+
+    return normalized.replace("_", " ").capitalize()
+
+
 def _render_visualization(result: dict | None, visualization: dict | None) -> None:
     frame = _dataframe(result)
     if frame.empty:
@@ -44,7 +62,7 @@ def _render_visualization(result: dict | None, visualization: dict | None) -> No
     series = (visualization or {}).get("series")
 
     if kind == "metric" and y in frame.columns:
-        st.metric(y.replace("_", " ").title(), frame.iloc[0][y])
+        st.metric(_metric_label(y), frame.iloc[0][y])
         return
 
     if kind == "bar" and x in frame.columns and y in frame.columns:
@@ -67,20 +85,43 @@ def _render_visualization(result: dict | None, visualization: dict | None) -> No
     st.dataframe(frame, use_container_width=True, hide_index=True)
 
 
-def _render_token_usage(token_usage: dict | None) -> None:
+def _render_execution_summary(
+    trace: list[dict],
+    token_usage: dict | None,
+) -> None:
     usage = token_usage or {}
-    total_tokens = int(usage.get("total_tokens", 0) or 0)
-    if total_tokens <= 0:
-        return
-
     input_tokens = int(usage.get("input_tokens", 0) or 0)
     output_tokens = int(usage.get("output_tokens", 0) or 0)
+    total_tokens = int(usage.get("total_tokens", 0) or 0)
 
-    st.caption("Uso do modelo")
-    input_col, output_col, total_col = st.columns(3)
-    input_col.metric("Tokens de entrada", f"{input_tokens:,}".replace(",", "."))
-    output_col.metric("Tokens de saída", f"{output_tokens:,}".replace(",", "."))
-    total_col.metric("Tokens totais", f"{total_tokens:,}".replace(",", "."))
+    duration_ms = sum(
+        float(event.get("duration_ms") or 0)
+        for event in trace
+    )
+    query_count = sum(
+        1
+        for event in trace
+        if event.get("node") == "execute_sql" and event.get("status") == "ok"
+    )
+    repair_count = sum(
+        1 for event in trace if event.get("node") == "repair_sql"
+    )
+
+    st.caption("Execução")
+    duration_col, tokens_col, queries_col, repairs_col = st.columns(4)
+    duration_col.metric("Tempo da análise", f"{duration_ms / 1000:.1f} s")
+    tokens_col.metric(
+        "Tokens totais",
+        f"{total_tokens:,}".replace(",", "."),
+    )
+    queries_col.metric("Consultas SQL", query_count)
+    repairs_col.metric("Reparos", repair_count)
+
+    if total_tokens > 0:
+        st.caption(
+            "Tokens do modelo: "
+            f"{input_tokens:,} entrada · {output_tokens:,} saída".replace(",", ".")
+        )
 
 
 def _render_trace(trace: list[dict]) -> None:
@@ -166,8 +207,9 @@ if st.button("Analisar", type="primary", disabled=not question.strip()):
             payload.get("result"),
             payload.get("visualization"),
         )
-        _render_token_usage(payload.get("token_usage"))
-        _render_trace(payload.get("trace", []))
+        trace = payload.get("trace", [])
+        _render_execution_summary(trace, payload.get("token_usage"))
+        _render_trace(trace)
 
         if payload.get("trace_id"):
             st.caption(f"Execução: {payload['trace_id']}")

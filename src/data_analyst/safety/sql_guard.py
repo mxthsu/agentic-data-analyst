@@ -48,6 +48,19 @@ class SQLGuard:
         if normalized.startswith(("ATTACH", "DETACH", "PRAGMA")):
             return SQLValidation(False, "Comando SQLite não permitido.")
 
+        for projection in statement.selects:
+            has_aggregate = any(
+                isinstance(node, exp.AggFunc) for node in projection.walk()
+            )
+            if has_aggregate and not isinstance(projection, exp.Alias):
+                return SQLValidation(
+                    False,
+                    (
+                        "Expressões agregadas projetadas devem usar alias legível "
+                        "para apresentação do resultado."
+                    ),
+                )
+
         limit = statement.args.get("limit")
         group = statement.args.get("group")
         order = statement.args.get("order")

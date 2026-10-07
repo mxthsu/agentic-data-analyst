@@ -26,6 +26,9 @@ data disponível. Não use simplesmente "-1 year", pois isso pode gerar 13 meses
 calendário quando o período começa no meio de um mês.
 Em rankings Top-N agregados, ordene primeiro pela métrica e adicione um critério
 secundário estável pela dimensão exibida antes do LIMIT para desempatar resultados.
+Toda expressão agregada projetada (COUNT, SUM, AVG, MIN ou MAX) deve receber um
+alias legível em snake_case, preferencialmente em português, para que a interface
+possa apresentar a métrica sem expor sintaxe SQL ao usuário.
 Retorne SQL executável, sem markdown, sem múltiplas instruções e sem operações
 de escrita. Evite selecionar dados pessoais quando eles não forem necessários.
 """.strip()
@@ -36,7 +39,8 @@ Você corrige uma consulta SQLite que falhou na validação ou execução.
 Preserve o objetivo da consulta, use apenas o esquema fornecido e devolva uma
 única consulta de leitura válida. Não altere a intenção de negócio para contornar
 o erro. Em rankings Top-N agregados, preserve um critério secundário estável de
-desempate antes do LIMIT.
+desempate antes do LIMIT. Garanta também alias legível em snake_case para toda
+expressão agregada projetada.
 """.strip()
 
 

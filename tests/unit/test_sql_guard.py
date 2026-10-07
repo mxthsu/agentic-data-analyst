@@ -14,6 +14,7 @@ def guard() -> SQLGuard:
         "SELECT id, nome FROM clientes",
         "WITH ativos AS (SELECT id FROM clientes) SELECT * FROM ativos",
         "SELECT COUNT(*) AS total FROM compras",
+        "SELECT AVG(valor) AS media_valor FROM compras",
         (
             "SELECT estado, COUNT(*) AS total FROM clientes GROUP BY estado "
             "ORDER BY total DESC, estado ASC LIMIT 5"
@@ -33,6 +34,7 @@ def test_aceita_consultas_de_leitura(guard: SQLGuard, sql: str) -> None:
         "ATTACH DATABASE 'outro.db' AS outro",
         "PRAGMA journal_mode=WAL",
         "SELECT 1; SELECT 2",
+        "SELECT COUNT(DISTINCT cliente_id) FROM compras",
         (
             "SELECT estado, COUNT(*) AS total FROM clientes GROUP BY estado "
             "ORDER BY total DESC LIMIT 5"
@@ -45,6 +47,13 @@ def test_rejeita_operacoes_fora_da_politica(guard: SQLGuard, sql: str) -> None:
     assert result.valid is False
     with pytest.raises(SQLPolicyError):
         guard.ensure_safe(sql)
+
+
+def test_exige_alias_em_expressao_agregada(guard: SQLGuard) -> None:
+    result = guard.validate("SELECT COUNT(DISTINCT cliente_id) FROM compras")
+
+    assert result.valid is False
+    assert "alias legível" in (result.reason or "")
 
 
 def test_exige_desempate_deterministico_em_ranking_agregado(guard: SQLGuard) -> None:
