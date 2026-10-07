@@ -16,6 +16,7 @@ from .models import (
 
 class AgentState(TypedDict, total=False):
     question: Required[str]
+    trace_id: str
     schema: DatabaseSchema
     intent: QuestionIntent
     plan: InvestigationPlan
