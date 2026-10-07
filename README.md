@@ -75,71 +75,63 @@ A interface mostra as consultas executadas e as etapas do fluxo no painel de ras
 
 ## Início rápido em outro computador (Windows / PowerShell)
 
-### 1. Pré-requisitos
+### Primeira execução
 
-Instale **Git** e **Python 3.12**. Tenha também o arquivo SQLite fornecido no desafio e uma chave da Gemini Developer API / Google AI Studio.
+Instale **Git** e **Python 3.12**. Tenha o arquivo SQLite fornecido no desafio e uma chave da Gemini Developer API / Google AI Studio.
 
-### 2. Clone o repositório
+Clone o projeto:
 
 ```powershell
 git clone https://github.com/mxthsu/agentic-data-analyst.git
 cd agentic-data-analyst
 ```
 
-### 3. Crie e ative o ambiente virtual
+Execute a configuração:
 
 ```powershell
-py -3.12 -m venv .venv
+.\setup.ps1
+```
+
+O script cria o ambiente virtual, instala as dependências, cria o `.env`, solicita a chave do Gemini e copia o banco para `data/anexo_desafio_1.db`.
+
+Se o Windows bloquear a execução do script:
+
+```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -e .
+.\setup.ps1
 ```
 
-### 4. Configure o ambiente
+### Iniciar a aplicação
+
+Depois da configuração, use:
 
 ```powershell
-Copy-Item .env.example .env
-notepad .env
+.\start.ps1
 ```
 
-No arquivo `.env`, preencha `GOOGLE_API_KEY`. Os demais valores podem permanecer com os padrões do projeto. Se o banco estiver com outro nome ou em outro caminho, ajuste `DATABASE_PATH`.
+O script inicia a API e o Streamlit em janelas separadas, verifica se os serviços responderam e abre a interface no navegador.
 
-### 5. Coloque o banco no projeto
+Nas próximas execuções, basta entrar na pasta do projeto e executar `.\start.ps1`.
 
-Crie a pasta `data` se necessário e copie o arquivo fornecido para:
+### Execução manual
 
-```text
-data/anexo_desafio_1.db
-```
+Os scripts apenas automatizam os mesmos comandos abaixo. Para iniciar manualmente:
 
-O banco não é versionado no Git.
-
-### 6. Inicie a API
-
-No primeiro PowerShell, a partir da raiz do projeto:
+Terminal 1:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-python -m uvicorn data_analyst.api.main:app --app-dir src --reload
+python -m uvicorn data_analyst.api.main:app --app-dir src
 ```
 
-A API fica em `http://localhost:8000` e o Swagger em `http://localhost:8000/docs`.
-
-### 7. Inicie a interface
-
-Abra um segundo PowerShell na raiz do projeto:
+Terminal 2:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m streamlit run ui/streamlit_app.py
 ```
 
-Abra a URL exibida pelo Streamlit, normalmente `http://localhost:8501`.
-
-### Próximas execuções
-
-Depois da primeira instalação, basta abrir dois terminais, ativar `.venv` nos dois e executar novamente os comandos da API e do Streamlit. Não é necessário reinstalar as dependências.
+A API fica em `http://localhost:8000`, o Swagger em `http://localhost:8000/docs` e a interface normalmente em `http://localhost:8501`.
 
 ## Configuração
 
