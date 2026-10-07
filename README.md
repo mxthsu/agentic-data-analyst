@@ -89,6 +89,8 @@ ruff check src tests ui
 
 Os testes cobrem descoberta dinâmica do esquema, SQL somente leitura, timeout, limite de linhas, recuperação de consulta inválida, múltiplas consultas, ambiguidade temporal, API e política de visualização.
 
+A validação com modelo real fica isolada em `tests/e2e`. Ela só é executada quando `RUN_E2E=1` estiver definido e houver banco e credenciais locais, evitando custo e variabilidade no CI.
+
 As cinco perguntas do enunciado possuem resultados de referência independentes em `tests/evals/test_reference_queries.py`, incluindo:
 
 1. estados com maior número de clientes que compraram via App em maio;
