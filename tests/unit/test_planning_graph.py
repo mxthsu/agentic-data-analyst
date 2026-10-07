@@ -2,7 +2,6 @@ import sqlite3
 from pathlib import Path
 
 from data_analyst.agent.graph import build_graph
-from data_analyst.agent.nodes.synthesis import synthesize_answer
 from data_analyst.agent.models import (
     AnswerDraft,
     EvidenceAssessment,
@@ -10,6 +9,7 @@ from data_analyst.agent.models import (
     QuestionIntent,
     SQLProposal,
 )
+from data_analyst.agent.nodes.synthesis import synthesize_answer
 from tests.fakes import ScriptedModel
 
 
