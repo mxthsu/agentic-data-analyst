@@ -225,6 +225,9 @@ if question:
             detail = None
         st.error(detail or "Não foi possível concluir a análise.")
     else:
+        with st.chat_message("user"):
+            st.write(question.strip())
+
         st.subheader("Resposta")
         st.write(payload["answer"])
 

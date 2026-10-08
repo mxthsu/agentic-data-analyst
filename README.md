@@ -1,218 +1,233 @@
 # Agentic Data Analyst
 
-Assistente agentivo de dados que recebe perguntas de negócio em linguagem natural, investiga um banco SQLite e produz respostas fundamentadas, com geração e validação de SQL, visualizações e rastreabilidade da execução.
+[![CI](https://github.com/mxthsu/agentic-data-analyst/actions/workflows/ci.yml/badge.svg)](https://github.com/mxthsu/agentic-data-analyst/actions/workflows/ci.yml)
 
-## O que a solução faz
+Projeto em **Python** para análise de dados em linguagem natural sobre **SQLite**. A aplicação interpreta perguntas, investiga o esquema do banco, gera e valida SQL, avalia os resultados e apresenta respostas acompanhadas de visualizações e rastreabilidade.
 
-- descobre tabelas, colunas, chaves estrangeiras, cobertura temporal e valores categóricos de baixa cardinalidade em tempo de execução;
-- interpreta a pergunta e cria um plano de investigação;
-- gera SQL dinamicamente, sem consultas de negócio fixas na aplicação;
-- valida e executa SQL somente leitura;
-- corrige consultas inválidas com número limitado de tentativas;
-- pode executar mais de uma consulta antes de responder;
-- trata ambiguidades temporais de forma explícita;
-- escolhe indicador, tabela, barras ou linha de forma determinística;
-- expõe consultas, etapas, erros, duração e consumo de tokens no rastro operacional;
-- disponibiliza uma API FastAPI e uma interface Streamlit.
+**Tecnologias:** Python 3.12 · FastAPI · LangGraph · LangChain · Gemini · SQLite · sqlglot · Streamlit
 
-## Arquitetura
+## Visão geral
 
-```text
-Streamlit
-   |
-   v
-FastAPI
-   |
-   v
-LangGraph
-   |
-   +--> descoberta do esquema
-   +--> interpretação + contexto temporal
-   +--> planejamento
-   +--> geração SQL
-   +--> validação -----> reparo
-   +--> execução ------> reparo
-   +--> avaliação de evidência
-   |       |
-   |       +--> nova consulta
-   |       +--> esclarecimento
-   |       +--> resposta
-   |
-   +--> síntese + visualização
-   |
-   v
-SQLite somente leitura
-```
+A execução não se limita a traduzir uma pergunta para SQL. Um grafo de estados organiza a descoberta dos dados, o planejamento, a execução de consultas e a avaliação das evidências. Conforme o resultado, o fluxo pode realizar outra consulta, corrigir SQL inválido ou solicitar esclarecimento.
 
-O modelo de linguagem lida com interpretação, planejamento, geração, reparo, avaliação de evidência e síntese. Segurança, limites, execução SQL, política temporal e escolha da visualização permanecem determinísticos.
+- Descoberta dinâmica de tabelas, colunas, relacionamentos, períodos e categorias.
+- Consultas SQL geradas em tempo de execução, validadas e executadas em **modo somente leitura**.
+- Investigação em múltiplas etapas, com limites para consultas e reparos.
+- Respostas fundamentadas nos dados retornados, sem respostas de negócio pré-definidas.
+- Visualização por indicador, tabela, barras ou linha, conforme a análise.
+- Rastreabilidade de SQL, etapas, suposições, duração e consumo de tokens.
 
-### Tecnologias
+## Demonstração
 
-- **Python 3.12**
-- **LangGraph**
-- **LangChain Core + langchain-google-genai**
-- **Gemini Developer API (Google AI Studio)**
-- **FastAPI + Uvicorn**
-- **SQLite + sqlglot**
-- **Pydantic + pydantic-settings**
-- **Streamlit + pandas + httpx**
-- **pytest + Ruff + GitHub Actions**
+As imagens abaixo são **capturas da aplicação em execução** com Streamlit, FastAPI, LangGraph, Gemini e a base SQLite de referência. Os valores são provenientes das consultas, não de telas simuladas.
 
-As versões e demais dependências estão declaradas em `pyproject.toml`.
+### Compras por estado e canal
 
-### Fluxo do agente
+**Pergunta:** Quais são os cinco estados com maior número de clientes distintos que compraram via App em maio de 2025?
 
-1. A aplicação lê o schema do SQLite e identifica tabelas, colunas, relações, datas e alguns valores categóricos úteis.
-2. A pergunta é interpretada e convertida em uma intenção estruturada.
-3. O contexto temporal é resolvido. Quando existe mais de uma interpretação possível, a aplicação pede esclarecimento antes de consultar o banco.
-4. O agente cria um plano e gera a próxima consulta SQL.
-5. A consulta passa pela validação de segurança antes da execução.
-6. Se houver erro de SQL, o fluxo tenta corrigir a consulta e valida novamente.
-7. Depois de cada consulta, o agente avalia se já existe informação suficiente. Se faltar evidência, uma nova consulta pode ser gerada.
-8. Ao final, a resposta é produzida a partir dos resultados obtidos e a interface escolhe a visualização adequada.
+**Resultado observado:** São Paulo (6), Minas Gerais (3), Santa Catarina (3), Alagoas (2) e Espírito Santo (2).
 
-A interface mostra as consultas executadas e as etapas do fluxo no painel de rastreabilidade.
+![Resposta da análise de clientes por estado com gráfico de barras](docs/images/demo-vendas-por-estado.png)
 
-## Início rápido em outro computador (Windows / PowerShell)
+<details>
+<summary><strong>Interações em campanhas de WhatsApp</strong> — 17 clientes distintos em 2024</summary>
 
-### Primeira execução
+![Contagem de clientes que interagiram com campanhas, apresentada como indicador](docs/images/demo-engajamento-campanhas.png)
 
-Instale **Git** e **Python 3.12**. Tenha o arquivo SQLite fornecido no desafio e uma chave da Gemini Developer API / Google AI Studio.
+</details>
 
-Clone o projeto:
+<details>
+<summary><strong>Média de compras por categoria</strong> — comparação entre seis categorias</summary>
+
+![Média de transações por cliente por categoria, apresentada em barras](docs/images/demo-compras-por-categoria.png)
+
+</details>
+
+<details>
+<summary><strong>Reclamações não resolvidas por canal</strong> — Telefone: 19; Chat: 18; E-mail: 14</summary>
+
+![Reclamações não resolvidas por canal, apresentadas em barras](docs/images/demo-reclamacoes-por-canal.png)
+
+</details>
+
+<details>
+<summary><strong>Evolução mensal de reclamações</strong> — agosto de 2024 a julho de 2025</summary>
+
+![Tendência mensal de reclamações por canal em gráfico de linhas](docs/images/demo-evolucao-reclamacoes.png)
+
+</details>
+
+Os resultados dos cinco cenários podem ser conferidos por [consultas SQL independentes](tests/evals/test_reference_queries.py) e reproduzidos localmente com a base de referência.
+
+## Instalação e execução
+
+### Pré-requisitos
+
+- **Python 3.12 ou superior** e **Git**;
+- **Windows / PowerShell** para utilizar os scripts fornecidos;
+- chave da [Gemini Developer API](https://aistudio.google.com/apikey);
+- banco SQLite compatível. **A base usada nas capturas não é distribuída neste repositório.**
+
+### Início rápido no Windows
 
 ```powershell
 git clone https://github.com/mxthsu/agentic-data-analyst.git
 cd agentic-data-analyst
-```
 
-Execute a configuração:
-
-```powershell
 .\setup.ps1
+.\start.ps1
 ```
 
-O script cria o ambiente virtual, instala as dependências, cria o `.env`, solicita a chave do Gemini e copia o banco para `data/anexo_desafio_1.db`.
+O `setup.ps1` prepara o ambiente virtual, instala as dependências e configura o `.env`. O script solicita a chave Gemini e, caso o banco ainda não exista, o caminho do arquivo SQLite, copiado para `data/anexo_desafio_1.db`. O arquivo de dados e as credenciais não são versionados.
 
-Se o Windows bloquear a execução do script:
+O `start.ps1` inicia os serviços em janelas separadas, verifica a disponibilidade da API e do Streamlit e abre a interface.
+
+| Serviço | URL local |
+| --- | --- |
+| Interface Streamlit | [http://localhost:8501](http://localhost:8501) |
+| API FastAPI | [http://localhost:8000](http://localhost:8000) |
+| Swagger/OpenAPI | [http://localhost:8000/docs](http://localhost:8000/docs) |
+
+Caso a política do PowerShell bloqueie os scripts, ajuste **somente a sessão atual**:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\setup.ps1
 ```
 
-### Iniciar a aplicação
-
-Depois da configuração, use:
-
-```powershell
-.\start.ps1
-```
-
-O script inicia a API e o Streamlit em janelas separadas, verifica se os serviços responderam e abre a interface no navegador.
-
-Nas próximas execuções, basta entrar na pasta do projeto e executar `.\start.ps1`.
-
 ### Execução manual
 
-Os scripts apenas automatizam os mesmos comandos abaixo. Para iniciar manualmente:
+Com a configuração concluída, abra dois terminais na raiz do repositório.
 
-Terminal 1:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn data_analyst.api.main:app --app-dir src
-```
-
-Terminal 2:
+**API:**
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-python -m streamlit run ui/streamlit_app.py
+.\.venv\Scripts\python.exe -m uvicorn data_analyst.api.main:app --app-dir src
 ```
 
-A API fica em `http://localhost:8000`, o Swagger em `http://localhost:8000/docs` e a interface normalmente em `http://localhost:8501`.
+**Interface:**
 
-## Configuração
-
-O arquivo `.env.example` contém as configurações disponíveis:
-
-```env
-DATABASE_PATH=data/anexo_desafio_1.db
-GOOGLE_API_KEY=sua_chave
-GEMINI_MODEL=gemini-3.5-flash-lite
-GEMINI_REQUESTS_PER_MINUTE=6
-GEMINI_MAX_BURST_REQUESTS=5
-GEMINI_REQUEST_TIMEOUT_SECONDS=30
-GEMINI_MAX_OUTPUT_TOKENS=1024
-API_URL=http://localhost:8000
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run ui/streamlit_app.py
 ```
 
-### Modelo, limites e tokens
+### Exemplo de chamada à API
 
-O modelo padrão é o `gemini-3.5-flash-lite`, acessado pela Gemini Developer API do Google AI Studio. O projeto aplica limite local de chamadas e timeout configurável. Em caso de limite do provider, a API retorna um erro controlado.
+O endpoint `POST /ask` recebe uma pergunta e retorna resposta, dados consultados, especificação de visualização, suposições e rastro da execução.
 
-A interface mostra o consumo de tokens da execução. O valor vem do `usage_metadata` retornado pelo modelo. O `get_usage_metadata_callback()`, do `langchain-core`, coleta esses dados e o serviço soma `input_tokens`, `output_tokens` e `total_tokens` de todas as chamadas LLM feitas para responder à pergunta.
+```powershell
+$body = @{
+    question = "Quantos clientes distintos interagiram com campanhas de WhatsApp em 2024?"
+} | ConvertTo-Json
 
-Antes do teste ponta a ponta, valide apenas a integração do modelo:
-
-```bash
-python scripts/smoke_gemini.py
+Invoke-RestMethod -Uri "http://localhost:8000/ask" -Method Post -ContentType "application/json" -Body $body
 ```
 
-Esse comando faz uma única chamada ao modelo e não consulta o SQLite.
+O contrato completo está em [`src/data_analyst/api/schemas.py`](src/data_analyst/api/schemas.py).
 
-O rastro da execução também registra duração por etapa, SQL executado, quantidade de linhas, número de consultas e reparos.
+## Arquitetura
 
-## Testes e avaliações
-
-```bash
-pytest -q
-ruff check src tests ui
+```text
+Streamlit
+    |
+    v
+FastAPI (/ask)
+    |
+    v
+LangGraph
+    |
+    +-- descoberta do esquema
+    +-- interpretação e contexto temporal
+    +-- planejamento da investigação
+    +-- geração de SQL
+    +-- validação ----> reparo de SQL
+    +-- execução -----> reparo de SQL
+    +-- avaliação da evidência
+    |       +--> nova consulta
+    |       +--> esclarecimento
+    |       +--> resposta
+    +-- síntese e seleção da visualização
+    |
+    v
+SQLite (somente leitura)
 ```
 
-Os testes cobrem descoberta dinâmica do esquema, SQL somente leitura, timeout, limite de linhas, recuperação de consulta inválida, múltiplas consultas, ambiguidade temporal, API e política de visualização.
+O **LangGraph** gerencia estado e transições. O **LangChain Core** fornece abstrações de modelo e saídas estruturadas. O **Gemini** participa da interpretação, planejamento, geração, reparo, avaliação e síntese; segurança SQL, limites de execução, política temporal e escolha da visualização são determinísticos.
 
-A validação com modelo real fica isolada em `tests/e2e`. Ela só é executada quando `RUN_E2E=1` estiver definido e houver banco e credenciais locais, evitando consumo da cota gratuita e variabilidade no CI.
+| Componente | Responsabilidade |
+| --- | --- |
+| [`ui/streamlit_app.py`](ui/streamlit_app.py) | Interface, gráficos e rastro operacional |
+| [`api/main.py`](src/data_analyst/api/main.py) | API e tratamento de erros |
+| [`agent/graph.py`](src/data_analyst/agent/graph.py) | Fluxo e transições do agente |
+| [`database/inspector.py`](src/data_analyst/database/inspector.py) | Descoberta do esquema |
+| [`safety/sql_guard.py`](src/data_analyst/safety/sql_guard.py) | Validação estrutural do SQL |
+| [`database/executor.py`](src/data_analyst/database/executor.py) | Consultas SQLite somente leitura |
+| [`visualization/policy.py`](src/data_analyst/visualization/policy.py) | Escolha de visualização |
 
-As cinco perguntas do enunciado possuem resultados de referência independentes em `tests/evals/test_reference_queries.py`, incluindo:
+### Segurança e limites
 
-1. estados com maior número de clientes que compraram via App em maio;
-2. clientes que interagiram com WhatsApp em 2024;
-3. categorias com maior média de compras por cliente;
-4. reclamações não resolvidas por canal;
-5. tendência de reclamações por canal no último ano disponível.
+O executor usa `sqlglot`, SQLite em `mode=ro`, `PRAGMA query_only=ON` e autorizador de operações. SQL reparado também precisa passar pela validação.
 
-Esses valores ficam apenas nos testes como referência. A aplicação não usa respostas fixas.
+Por pergunta, o grafo admite até **4 consultas executadas**, **2 reparos de SQL** e **12 passos investigativos**. Por consulta, o executor aplica limites padrão de **5 segundos** e **500 linhas**. Perguntas ambíguas ou sem suporte suficiente nos dados podem resultar em pedido de esclarecimento ou encerramento controlado.
 
-### Validação ponta a ponta
+## Testes e validação
 
-As cinco perguntas do enunciado também foram executadas manualmente com o provider real. Os resultados observados foram compatíveis com os oráculos independentes:
+Instale as dependências de desenvolvimento:
 
-| Caso | Resultado validado | Visualização |
-| --- | --- | --- |
-| Top 5 estados via App em maio | São Paulo 6, Minas Gerais 3, Santa Catarina 3, Alagoas 2, Espírito Santo 2 | barras |
-| Interações com WhatsApp em 2024 | 17 clientes distintos | indicador |
-| Média de compras por cliente e categoria | Roupas 2,211; Viagens 2,162; Livros 1,976; Serviços 1,962; Eletrônicos 1,923; Alimentos 1,882 | barras |
-| Reclamações não resolvidas por canal | Telefone 19, Chat 18, E-mail 14 | barras |
-| Tendência de reclamações no último ano | janela mensal de 2024-08 a 2025-07; Chat 34, E-mail 27, Telefone 33 no período | linha |
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+```
 
-O rastro da interface também expõe duração por etapa, consultas SQL, reparos e consumo agregado de tokens de entrada e saída.
+Execute os testes e a análise estática:
 
-## Documentação
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check src tests ui
+```
 
-- [Especificação](docs/SPEC-001-agentic-data-analyst.md)
-- [Descoberta do banco real](docs/DESCOBERTA-BANCO.md)
-- [ADRs](docs/adr/)
-- [Arquitetura proposta para o Desafio 2](docs/ARQUITETURA-DESAFIO-2.md)
+| Requisito verificado | Evidência no repositório |
+| --- | --- |
+| Leitura e descoberta dinâmica do esquema | Testes unitários e de integração do banco |
+| Planejamento, múltiplas consultas e avaliação da evidência | Testes do fluxo agentivo |
+| Validação de SQL, bloqueio de escrita e reparos | Testes de segurança e executor |
+| Tratamento de períodos ambíguos e falhas | Testes de política temporal e roteamento |
+| Resposta, visualização e rastro | Testes de API e visualização |
+| Resultados dos cinco exemplos | [Avaliações SQL independentes](tests/evals/test_reference_queries.py) |
 
-O banco real diverge parcialmente do esquema descrito no enunciado. A aplicação descobre o schema em tempo de execução.
+O [CI](.github/workflows/ci.yml) executa `ruff` e `pytest` em pull requests e pushes na branch `main`. Testes com o modelo real ficam em `tests/e2e` e exigem banco local, credenciais e `RUN_E2E=1`. Eles não integram o CI obrigatório, para evitar consumo da API em cada execução.
 
-## Possíveis evoluções
+Para habilitar os testes E2E no PowerShell:
 
-- usar Vertex AI em uma implantação na GCP;
-- adicionar tracing externo em ambiente de produção;
-- ampliar o conjunto de avaliações automatizadas;
-- cachear metadados do schema em bancos maiores;
-- guardar histórico de sessões quando houver necessidade;
-- permitir fallback entre modelos ou providers.
+```powershell
+$env:RUN_E2E = "1"
+.\.venv\Scripts\python.exe -m pytest -q tests/e2e
+Remove-Item Env:RUN_E2E
+```
+
+A [especificação técnica](docs/SPEC-001-agentic-data-analyst.md) detalha requisitos, critérios de aceite e decisões de escopo.
+
+## Estrutura do projeto
+
+```text
+agentic-data-analyst/
+├── src/data_analyst/
+│   ├── agent/          # Estado, grafo e nós
+│   ├── api/            # FastAPI e contratos
+│   ├── database/       # Descoberta e consultas
+│   ├── safety/         # Política de segurança SQL
+│   └── visualization/  # Política de visualização
+├── ui/                 # Interface Streamlit
+├── tests/              # Unitários, integração, avaliações e E2E
+├── docs/               # Especificação, ADRs e capturas
+├── data/               # Banco local não versionado
+├── setup.ps1           # Configuração local
+└── start.ps1           # Inicialização
+```
+
+**Documentação:** [Especificação](docs/SPEC-001-agentic-data-analyst.md) · [Descoberta do banco](docs/DESCOBERTA-BANCO.md) · [Decisões arquiteturais](docs/adr/) · [Estudo de arquitetura complementar](docs/ARQUITETURA-DESAFIO-2.md)
+
+## Limitações e possíveis evoluções
+
+A implementação atual trabalha com **SQLite** em execução local. Não inclui autenticação, autorização por usuário, múltiplos locatários, memória persistente ou infraestrutura distribuída. O uso do Gemini depende de credenciais válidas e da disponibilidade do provedor.
+
+Os resultados das capturas referem-se à base utilizada na demonstração. Outras bases e versões do modelo podem produzir respostas ou tempos diferentes. Entre as extensões possíveis estão suporte a novos bancos, persistência de sessões, avaliações adicionais, tracing externo e implantação gerenciada.
